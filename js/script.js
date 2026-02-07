@@ -31,12 +31,12 @@ import {
 // CONFIGURAÇÃO DO FIREBASE
 // ============================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyDIDCJwHt5xf-2JRsYu8pxe9YI4obfvWqU",
+  apiKey: "AIzaSyDin71f0GEpU7FO2VO5pZ9niYQlXQwkLj0",
   authDomain: "ai-plus-defce.firebaseapp.com",
   projectId: "ai-plus-defce",
   storageBucket: "ai-plus-defce.firebasestorage.app",
   messagingSenderId: "487321331111",
-  appId: "1:487321331111:web:28f39eced2604c02110282",
+  appId: "1:487321331111:web:28f39eced2604c02110282"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -104,7 +104,7 @@ async function ativarNotificacoesPush() {
     // 5. Pedir o Token vinculado ao registro ativo
     const token = await getToken(messaging, {
       vapidKey:
-        "BNVhXVKUWVQaX3N8r9s9MBMJZL7NgH4ClYuYFn-Tf9dvjTnjOgcl2bcxyxbaIFRInt3ADyJj0a_npzzupZtAi8o",
+        "BBidska-mw_-w3o2x2-XOMnCf9JtNc4JxBs5pN00ioHYy21TDhWQPuCO3PAkVuNaNFK3F7CHGz90LAnUKwDGxfA",
       serviceWorkerRegistration: registration,
     });
 

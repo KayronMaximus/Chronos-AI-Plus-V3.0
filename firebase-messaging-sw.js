@@ -9,12 +9,12 @@ console.log(
   "[firebase-messaging-sw.js] Service Worker carregado e inicializado",
 );
 const firebaseConfig = {
-  apiKey: "AIzaSyDIDCJwHt5xf-2JRsYu8pxe9YI4obfvWqU",
+  apiKey: "AIzaSyDin71f0GEpU7FO2VO5pZ9niYQlXQwkLj0",
   authDomain: "ai-plus-defce.firebaseapp.com",
   projectId: "ai-plus-defce",
   storageBucket: "ai-plus-defce.firebasestorage.app",
   messagingSenderId: "487321331111",
-  appId: "1:487321331111:web:28f39eced2604c02110282",
+  appId: "1:487321331111:web:28f39eced2604c02110282"
 };
 
 firebase.initializeApp(firebaseConfig);
