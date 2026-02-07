@@ -1,17 +1,17 @@
 :root {
-    /* Cores Neutras (Escuro Profundo) */
-    --bg-main: #05070a;       
-    --bg-card: #0d1117;       
-    --bg-nav: #080a0d;        
-    --text-dim: #667681;      
-    --primary-color: #00d4ff; /* Para compatibilidade com o JS */
-    
-    /* Neons Sutis */
-    --primary-neon: #00d4ff;  
-    --primary-glow: rgba(0, 212, 255, 0.15); 
-    --success-neon: #00ff88;  
-    --gold-neon: #ffb700;     
-    --border-subtle: rgba(255, 255, 255, 0.05);
+  /* Cores Neutras (Escuro Profundo) */
+  --bg-main: #05070a;
+  --bg-card: #0d1117;
+  --bg-nav: #080a0d;
+  --text-dim: #667681;
+  --primary-color: #00d4ff; /* Para compatibilidade com o JS */
+
+  /* Neons Sutis */
+  --primary-neon: #00d4ff;
+  --primary-glow: rgba(0, 212, 255, 0.15);
+  --success-neon: #00ff88;
+  --gold-neon: #ffb700;
+  --border-subtle: rgba(255, 255, 255, 0.05);
 }
 * {
   margin: 0;
@@ -853,114 +853,151 @@ main {
    ========================================================= */
 
 #view-config {
-    padding-bottom: 40px;
+  padding-bottom: 40px;
 }
 
 #view-config h2 {
-    font-size: 1.5rem;
-    letter-spacing: 2px;
-    color: #fff;
-    text-transform: uppercase;
-    margin-bottom: 25px;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  color: #fff;
+  text-transform: uppercase;
+  margin-bottom: 25px;
 }
 
 /* Card de Configuração Evoluído */
 #view-config .card {
-    background: linear-gradient(145deg, #0d1117 0%, #05070a 100%);
-    border: 1px solid var(--border-subtle);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(145deg, #0d1117 0%, #05070a 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Faixa lateral de categoria */
 #view-config .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 4px; height: 100%;
-    background: var(--primary-neon);
-    box-shadow: 0 0 15px var(--primary-glow);
-    opacity: 0.6;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary-neon);
+  box-shadow: 0 0 15px var(--primary-glow);
+  opacity: 0.6;
 }
 
 /* Cores diferentes por categoria (usando a ordem que você tem) */
-#view-config .card:nth-of-type(2)::before { background: var(--accent-neon); box-shadow: 0 0 15px var(--accent-neon); }
-#view-config .card:nth-of-type(3)::before { background: #4285F4; box-shadow: 0 0 15px rgba(66, 133, 244, 0.4); }
+#view-config .card:nth-of-type(2)::before {
+  background: var(--accent-neon);
+  box-shadow: 0 0 15px var(--accent-neon);
+}
+#view-config .card:nth-of-type(3)::before {
+  background: #4285f4;
+  box-shadow: 0 0 15px rgba(66, 133, 244, 0.4);
+}
 
 #view-config .card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(0, 212, 255, 0.3);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+  transform: translateY(-3px);
+  border-color: rgba(0, 212, 255, 0.3);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
 }
 
 /* Títulos e Labels */
 #view-config h3 {
-    font-size: 1rem;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+  font-size: 1rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 #view-config p {
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    margin-bottom: 18px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-bottom: 18px;
 }
 
 /* Inputs Estilo Terminal */
 #view-config input.input-dark {
-    width: 100%;
-    background: #000 !important;
-    border: 1px solid #1a222c !important;
-    padding: 14px 16px;
-    border-radius: 8px;
-    color: var(--primary-neon) !important;
-    font-family: 'Consolas', monospace;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-    transition: border-color 0.3s;
+  width: 100%;
+  background: #000 !important;
+  border: 1px solid #1a222c !important;
+  padding: 14px 16px;
+  border-radius: 8px;
+  color: var(--primary-neon) !important;
+  font-family: "Consolas", monospace;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  transition: border-color 0.3s;
 }
 
 #view-config input.input-dark:focus {
-    border-color: var(--primary-neon) !important;
-    box-shadow: 0 0 10px var(--primary-glow);
+  border-color: var(--primary-neon) !important;
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 /* Botões de Ação Dinâmicos */
 #view-config .action-btn {
-    background: rgba(0, 212, 255, 0.05);
-    border: 1px solid var(--primary-neon);
-    color: var(--primary-neon);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    padding: 14px;
-    border-radius: 8px;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.3s;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid var(--primary-neon);
+  color: var(--primary-neon);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 14px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 #view-config .action-btn:hover {
-    background: var(--primary-neon);
-    color: #000000;
-    box-shadow: 0 0 20px var(--primary-glow);
+  background: var(--primary-neon);
+  color: #000000;
+  box-shadow: 0 0 20px var(--primary-glow);
 }
 
 /* Botão Google Calendar Especial */
 #view-config button[onclick="iniciarConexaoGoogle()"] {
-    background: rgba(66, 133, 244, 0.1);
-    border-color: #4285F4;
-    color: #4285F4;
+  background: rgba(66, 133, 244, 0.1);
+  border-color: #4285f4;
+  color: #4285f4;
 }
 
 #view-config button[onclick="iniciarConexaoGoogle()"]:hover {
-    background: #4285F4;
-    color: #fff;
+  background: #4285f4;
+  color: #fff;
+}
+/* Seleciona o card específico de status das matérias */
+#view-estudos .card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px; /* A mágica acontece aqui: cria espaço igual entre os itens */
+  padding: 20px;
+}
+
+/* Ajuste fino em cada bloco de matéria */
+.materia-item {
+  width: 100%;
+  margin-bottom: 5px; /* Um reforço extra para o respiro */
+}
+
+/* Espaço entre o Nome da Matéria e a Barra de Progresso */
+.materia-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px; /* Afasta o texto da barra */
+}
+
+/* Deixa a barra um pouquinho mais elegante */
+.progress-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
 }
