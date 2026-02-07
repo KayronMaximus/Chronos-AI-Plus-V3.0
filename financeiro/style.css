@@ -1,0 +1,51 @@
+/* financeiro/style.css */
+body {
+    background-color: #0a0b10; /* Fundo Solo Leveling */
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background: linear-gradient(145deg, #13151c, #1a1d26);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid #00d4ff; /* Brilho Neon */
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    width: 350px;
+}
+
+h3 {
+    text-align: center;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    background: #252a34;
+    color: white;
+    box-sizing: border-box;
+}
+
+button {
+    background: #00d4ff;
+    color: #0a0b10;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #008cb3;
+    box-shadow: 0 0 15px #00d4ff;
+}

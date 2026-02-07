@@ -1,0 +1,27 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Finanças do Reino | Chronos AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="card-financeiro">
+            <h3>💰 Registrar Gasto</h3>
+            <input type="text" id="itemGasto" placeholder="Ex: Passagem de ônibus">
+            <input type="number" id="valorGasto" placeholder="Valor (R$)">
+
+            <select id="categoriaGasto">
+                <option value="Transporte">Transporte</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Educação">Educação (CFO/Estudos)</option>
+                <option value="Lazer">Lazer</option>
+            </select>
+
+            <button onclick="salvarGasto()">Enviar para o BD</button>
+            <button onclick="window.location.href='../index.html'">⬅ Voltar ao Reino</button>
+        </div>
+    </div>
+
+    <script type="module" src="logic.js"></script>
+</body>

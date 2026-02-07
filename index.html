@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Assistant</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/4712/4712009.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div id="splash-screen">
+        <div class="deep-space-bg"></div>
+        <div class="particle-system">
+            <div class="core-void"></div>
+            <div class="particle-ring layer-1"></div>
+            <div class="particle-ring layer-2"></div>
+            <div class="particle-ring layer-3"></div>
+            <div class="particle-ring layer-4"></div>
+        </div>
+        <div class="ui-container">
+            <h1 class="system-title" id="titulo-ia-splash">CHRONOS <span class="blink">AI</span></h1>
+            <p class="loading-text">SINCRONIZANDO O SISTEMA...</p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <header class="header-principal" style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+                <h1 id="saudacao-texto">Carregando...</h1>
+                <p class="data-layer">
+                    <span id="data-atual-home">Carregando data...</span>
+                    <span style="margin: 0 8px; opacity: 0.5;">|</span>
+                    <span id="relogio-home" style="color: var(--primary-color); font-weight: bold;">00:00:00</span>
+                </p>
+            </div>
+            <button onclick="mostrarSecao('config')"
+                style="background:none; border:none; cursor:pointer; font-size: 1.2rem; filter: drop-shadow(0 0 5px var(--primary-color));">⚙️</button>
+        </header>
+
+        <main>
+            <section id="view-home" class="view">
+                <div class="card saldo-card">
+                    <p style="color: #888; font-size: 0.9rem;">Balanço Total</p>
+                    <h1 id="resumo-saldo-home">R$ 0,00</h1>
+                    <div style="height: 100px; margin-top: 15px;">
+                        <canvas id="grafico-resumo-home"></canvas>
+                    </div>
+                    <div id="streak-container"
+                        style="margin-top: 15px; font-weight: bold; color: #ff9f43; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🔥</span> Sequência: <span id="streak-count">0</span> dias
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3>🎯 Foco de Hoje</h3>
+                        <span id="contagem-tarefas" class="badge">0</span>
+                    </div>
+                    <div id="lista-resumo-home"></div>
+                    <button class="link-btn" onclick="mostrarSecao('agenda')">Ver Agenda Completa →</button>
+                </div>
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3>💰 Últimas Movimentações</h3>
+                    </div>
+                    <div id="lista-financas-home"></div>
+                </div>
+
+                <div class="card-dashboard system-card" onclick="abrirSistema()">
+                    <div class="card-header">
+                        <h3>⚡ SISTEMA <span class="lvl-badge-mini" id="home-lvl">LVL 1</span></h3>
+                        <span id="status-quest-mini" class="status-badge">PENDENTE</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="system-text">Daily Quest: <strong>Player Growth</strong></p>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="barra-progresso-home" style="width: 0%"></div>
+                        </div>
+                        <p class="small-text">Complete para ganhar XP e Status.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-agenda" class="view hidden">
+                <h2>Sua Agenda</h2>
+                <div class="card dashboard-card">
+                    <div style="width: 110px; height: 110px;">
+                        <canvas id="grafico-tarefas"></canvas>
+                    </div>
+                    <div style="text-align: right;">
+                        <h3 id="texto-progresso" style="font-size: 2rem; color: #00d4ff;">0%</h3>
+                        <p style="color: #888; font-size: 0.8rem;">Concluído</p>
+                    </div>
+                </div>
+                <button class="action-btn" onclick="abrirModal()">+ Nova Tarefa</button>
+                <div id="lista-tarefas" style="margin-top: 20px;"></div>
+            </section>
+
+            <section id="view-carteira" class="view hidden">
+                <h2>Finanças</h2>
+                <div class="card" style="text-align: center;">
+                    <p>Saldo em conta</p>
+                    <h1 id="saldo-carteira" style="font-size: 2.5rem;">R$ 0,00</h1>
+                </div>
+                <button onclick="window.location.href='financeiro/index.html'"
+                    style="width: 100%; background: #00d4ff; color: #000; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    ➕ REGISTRAR GASTO
+                </button>
+                <div class="card" style="height: 180px;">
+                    <canvas id="grafico-financas"></canvas>
+                </div>
+                <div class="card" style="height: 280px; padding: 20px;">
+                    <h3 style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Gastos por Categoria</h3>
+                    <div style="width: 100%; height: 100%; position: relative;">
+                        <canvas id="grafico-pizza-financas"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <button class="action-btn" onclick="abrirModalFinanceiro()">+ Nova Transação</button>
+                    <button onclick="analisarFinancas()" class="ai-btn">✨ Consultar Oráculo</button>
+                    <div id="resposta-ia" class="card hidden ia-box">
+                        <h3 style="color: #00d4ff;">Conselho do Oráculo:</h3>
+                        <p id="texto-ia">Pensando...</p>
+                    </div>
+                </div>
+                <div class="historico-container">
+                    <h3>Histórico Recente</h3>
+                    <div id="lista-transacoes"></div>
+                </div>
+            </section>
+
+            <section id="view-config" class="view hidden">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="mostrarSecao('home')"
+                        style="background:none; border:none; color:var(--primary-color); font-size: 1.2rem; cursor:pointer;">←</button>
+                    <h2>Configurações</h2>
+                </div>
+                <div class="card">
+                    <h3>👤 Identidade</h3>
+                    <p style="color: #888; font-size: 0.75rem; margin-bottom: 10px;">Como o Zeus deve te chamar?</p>
+                    <input type="text" id="config-nome-input" class="input-dark" placeholder="Novo nome...">
+                    <button class="action-btn" onclick="salvarNovoNome()">Salvar Nome</button>
+                </div>
+                <div class="card">
+                    <h3>🔐 Segurança (Oráculo)</h3>
+                    <p style="color: #888; font-size: 0.75rem; margin-bottom: 10px;">Insira sua API Key do Gemini.</p>
+                    <input type="password" id="config-api-key" class="input-dark" placeholder="Cole sua chave AIza...">
+                    <button class="action-btn" onclick="salvarApiKey()">Configurar Chave</button>
+                </div>
+                <div class="card">
+                    <h3>📅 Integração com Agenda</h3>
+                    <p style="color: #888; font-size: 0.75rem; margin-bottom: 15px;">Conecte sua conta para sincronizar
+                        missões.</p>
+                    <button class="action-btn" onclick="iniciarConexaoGoogle()" style="background: #4285F4;">Conectar
+                        Google Calendar</button>
+                </div>
+            </section>
+            <section id="view-estudos" class="view hidden">
+                <h2>🎓 Central Acadêmica</h2>
+
+                <div class="card" style="background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);">
+                    <h3 style="color:white; text-align:center;">CFO MARANHÃO</h3>
+                    <div id="countdown-cfo"
+                        style="font-size: 2rem; font-weight: bold; text-align: center; margin: 10px 0;">
+                        00d 00h 00m
+                    </div>
+                    <p style="text-align: center; font-size: 0.8rem; color: #eee;">Até a prova</p>
+                </div>
+
+<div class="card">
+    <h3>📊 Status das Matérias</h3>
+    
+    <div class="materia-item">
+        <div class="materia-info">
+            <span>⚖️ Direito / Legislação</span>
+            <span id="prog-direito-txt">0%</span>
+        </div>
+        <div class="progress-track"><div id="prog-direito-bar" class="progress-fill" style="background: #ff4d4d;"></div></div>
+    </div>
+
+    <div class="materia-item">
+        <div class="materia-info">
+            <span>💻 Informática (SQL/Python)</span>
+            <span id="prog-ti-txt">0%</span>
+        </div>
+        <div class="progress-track"><div id="prog-ti-bar" class="progress-fill" style="background: #00d4ff;"></div></div>
+    </div>
+
+    <div class="materia-item">
+        <div class="materia-info">
+            <span>📚 Português / Redação</span>
+            <span id="prog-port-txt">0%</span>
+        </div>
+        <div class="progress-track"><div id="prog-port-bar" class="progress-fill" style="background: #2ecc71;"></div></div>
+    </div>
+
+    <div class="materia-item">
+        <div class="materia-info">
+            <span>🧮 Matemática / RLM</span>
+            <span id="prog-mat-txt">0%</span>
+        </div>
+        <div class="progress-track"><div id="prog-mat-bar" class="progress-fill" style="background: #f1c40f;"></div></div>
+    </div>
+
+    <div class="materia-item">
+        <div class="materia-info">
+            <span>🚩 Hist./Geo. Maranhão</span>
+            <span id="prog-ma-txt">0%</span>
+        </div>
+        <div class="progress-track"><div id="prog-ma-bar" class="progress-fill" style="background: #9b59b6;"></div></div>
+    </div>
+</div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-btn" onclick="mostrarSecao('agenda')">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Agenda</span>
+            </button>
+            <button class="nav-btn" onclick="mostrarSecao('estudos')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+                <span>Estudos</span>
+            </button>
+            <button class="nav-btn home-btn" onclick="mostrarSecao('home')">
+                <div class="neon-reactor">
+                    <div class="core"></div>
+                </div>
+            </button>
+            <button class="nav-btn" onclick="mostrarSecao('carteira')">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M20 7h-5a4 4 0 1 0 0 8h5"></path>
+                    <path d="M4 17h16a2 2 0 0 0 2-2v-10a2 2 0 0 0 -2 -2h-16a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z"></path>
+                    <circle cx="16" cy="11" r="1" fill="currentColor"></circle>
+                </svg>
+                <span>Carteira</span>
+            </button>
+        </nav>
+    </div>
+
+    <div id="modal-tarefa" class="modal hidden">
+        <div class="modal-content">
+            <h3>Nova Missão</h3>
+            <label>O que precisa ser feito?</label>
+            <input type="text" id="input-titulo" placeholder="Ex: Estudar SQL">
+            <label>Categoria</label>
+            <select id="input-categoria">
+                <option value="Estudo">📚 Estudo</option>
+                <option value="Trabalho">💼 Trabalho</option>
+                <option value="Pessoal">⚡ Pessoal</option>
+            </select>
+            <div class="modal-buttons">
+                <button onclick="fecharModal()" class="btn-cancelar">Cancelar</button>
+                <button onclick="salvarTarefa()" class="btn-confirmar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-transacao" class="modal hidden">
+        <div class="modal-content">
+            <h3>Nova Movimentação</h3>
+            <label>Descrição</label>
+            <input type="text" id="input-desc-transacao" placeholder="Ex: Salário, Lanche...">
+            <label>Valor (R$)</label>
+            <input type="number" id="input-valor-transacao" placeholder="0.00" step="0.01">
+            <label>Tipo</label>
+            <select id="input-tipo-transacao">
+                <option value="entrada">📈 Entrada (Receita)</option>
+                <option value="saida">📉 Saída (Despesa)</option>
+            </select>
+            <label>Categoria do Gasto</label>
+            <select id="input-categoria-transacao">
+                <option value="Alimentação">🍕 Alimentação</option>
+                <option value="Transporte">🚗 Transporte</option>
+                <option value="Lazer">🎮 Lazer</option>
+                <option value="Educação">📚 Educação</option>
+                <option value="Saúde">🏥 Saúde</option>
+                <option value="Outros">⚙️ Outros</option>
+            </select>
+            <div class="modal-buttons">
+                <button onclick="fecharModalFinanceiro()" class="btn-cancelar">Cancelar</button>
+                <button onclick="salvarTransacao()" class="btn-confirmar-fin">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-agendamento" class="modal hidden">
+        <div class="modal-content modal-tatica">
+            <h3>📅 Agendar Missão</h3>
+            <p id="titulo-agendamento">...</p>
+            <label>Data e Hora de Início</label>
+            <input type="datetime-local" id="input-data-hora" class="input-dark">
+            <div class="modal-buttons">
+                <button onclick="fecharModalAgendamento()" class="btn-cancelar">Cancelar</button>
+                <button onclick="confirmarAgendamento()" class="btn-confirmar-agenda">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-sistema" class="modal-overlay hidden">
+        <div class="system-window">
+            <div class="sys-header-complex">
+                <div class="header-top">
+                    <h2 class="blink-anim">PLAYER STATUS</h2>
+                    <button onclick="fecharSistema()" class="btn-close-sys">✖</button>
+                </div>
+
+                <div class="player-stats">
+                    <div class="level-box">
+                        <span class="label">LEVEL</span>
+                        <span class="value-lvl" id="display-lvl">1</span>
+                    </div>
+                    <div class="xp-container">
+                        <div class="xp-info">
+                            <span>EXP</span>
+                            <span id="display-xp">0 / 100</span>
+                        </div>
+                        <div class="xp-track">
+                            <div class="xp-fill" id="bar-xp" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sys-content">
+                <h1 class="quest-title">PREPARAÇÃO FÍSICA</h1>
+                <p class="quest-sub">Objetivos Diários do Jogador</p>
+                <div class="separator-line"></div>
+
+                <div id="lista-exercicios">
+                </div>
+
+                <div id="msg-recompensa" class="reward-box hidden">
+                    <p>⚠️ QUEST COMPLETA</p>
+                    <span>Status Recuperado</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/script.js"></script>
+</body>
+
+</html>

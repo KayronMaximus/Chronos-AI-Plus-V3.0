@@ -1,0 +1,12 @@
+{
+  "name": "chronos-golem",
+  "version": "1.0.0",
+  "main": "golem.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "minimist": "^1.2.8",
+    "pip": "^0.0.1",
+    "py": "^0.0.0",
+    "python": "^0.0.4"
+  }
+}
