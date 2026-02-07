@@ -152,6 +152,21 @@
                     <input type="text" id="config-nome-input" class="input-dark" placeholder="Novo nome...">
                     <button class="action-btn" onclick="salvarNovoNome()">Salvar Nome</button>
                 </div>
+                <div class="card" id="card-auth-google">
+                    <h3>🔐 Conta do Google</h3>
+                    <p id="auth-status-texto" style="color: #888; font-size: 0.75rem; margin-bottom: 15px;">Sincronize
+                        seus dados na nuvem.</p>
+
+                    <button id="btn-login-google" onclick="login()" class="action-btn"
+                        style="background: #4285F4; display: none;">
+                        Entrar com Google
+                    </button>
+
+                    <button id="btn-logout-google" onclick="logout()" class="action-btn"
+                        style="background: #ff4444; display: none; margin-top: 10px;">
+                        Sair da Conta
+                    </button>
+                </div>
                 <div class="card">
                     <h3>🔐 Segurança (Oráculo)</h3>
                     <p style="color: #888; font-size: 0.75rem; margin-bottom: 10px;">Insira sua API Key do Gemini.</p>
@@ -165,6 +180,9 @@
                     <button class="action-btn" onclick="iniciarConexaoGoogle()" style="background: #4285F4;">Conectar
                         Google Calendar</button>
                 </div>
+                <button onclick="logout()" class="action-btn" style="background: #ff4444; margin-top: 10px;">
+                    Sair (Logout)
+                </button>
             </section>
             <section id="view-estudos" class="view hidden">
                 <h2>🎓 Central Acadêmica</h2>
@@ -178,49 +196,59 @@
                     <p style="text-align: center; font-size: 0.8rem; color: #eee;">Até a prova</p>
                 </div>
 
-<div class="card">
-    <h3>📊 Status das Matérias</h3>
-    
-    <div class="materia-item">
-        <div class="materia-info">
-            <span>⚖️ Direito / Legislação</span>
-            <span id="prog-direito-txt">0%</span>
-        </div>
-        <div class="progress-track"><div id="prog-direito-bar" class="progress-fill" style="background: #ff4d4d;"></div></div>
-    </div>
+                <div class="card">
+                    <h3>📊 Status das Matérias</h3>
 
-    <div class="materia-item">
-        <div class="materia-info">
-            <span>💻 Informática (SQL/Python)</span>
-            <span id="prog-ti-txt">0%</span>
-        </div>
-        <div class="progress-track"><div id="prog-ti-bar" class="progress-fill" style="background: #00d4ff;"></div></div>
-    </div>
+                    <div class="materia-item">
+                        <div class="materia-info">
+                            <span>⚖️ Direito / Legislação</span>
+                            <span id="prog-direito-txt">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="prog-direito-bar" class="progress-fill" style="background: #ff4d4d;"></div>
+                        </div>
+                    </div>
 
-    <div class="materia-item">
-        <div class="materia-info">
-            <span>📚 Português / Redação</span>
-            <span id="prog-port-txt">0%</span>
-        </div>
-        <div class="progress-track"><div id="prog-port-bar" class="progress-fill" style="background: #2ecc71;"></div></div>
-    </div>
+                    <div class="materia-item">
+                        <div class="materia-info">
+                            <span>💻 Informática (SQL/Python)</span>
+                            <span id="prog-ti-txt">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="prog-ti-bar" class="progress-fill" style="background: #00d4ff;"></div>
+                        </div>
+                    </div>
 
-    <div class="materia-item">
-        <div class="materia-info">
-            <span>🧮 Matemática / RLM</span>
-            <span id="prog-mat-txt">0%</span>
-        </div>
-        <div class="progress-track"><div id="prog-mat-bar" class="progress-fill" style="background: #f1c40f;"></div></div>
-    </div>
+                    <div class="materia-item">
+                        <div class="materia-info">
+                            <span>📚 Português / Redação</span>
+                            <span id="prog-port-txt">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="prog-port-bar" class="progress-fill" style="background: #2ecc71;"></div>
+                        </div>
+                    </div>
 
-    <div class="materia-item">
-        <div class="materia-info">
-            <span>🚩 Hist./Geo. Maranhão</span>
-            <span id="prog-ma-txt">0%</span>
-        </div>
-        <div class="progress-track"><div id="prog-ma-bar" class="progress-fill" style="background: #9b59b6;"></div></div>
-    </div>
-</div>
+                    <div class="materia-item">
+                        <div class="materia-info">
+                            <span>🧮 Matemática / RLM</span>
+                            <span id="prog-mat-txt">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="prog-mat-bar" class="progress-fill" style="background: #f1c40f;"></div>
+                        </div>
+                    </div>
+
+                    <div class="materia-item">
+                        <div class="materia-info">
+                            <span>🚩 Hist./Geo. Maranhão</span>
+                            <span id="prog-ma-txt">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="prog-ma-bar" class="progress-fill" style="background: #9b59b6;"></div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
 

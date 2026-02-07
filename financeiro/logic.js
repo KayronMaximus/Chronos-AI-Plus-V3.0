@@ -23,7 +23,7 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-async function salvarGasto() {
+/*async function salvarGasto() {
   const item = document.getElementById("itemGasto").value;
   const valorInput = document.getElementById("valorGasto").value;
   const valor = parseFloat(valorInput);
@@ -36,7 +36,13 @@ async function salvarGasto() {
 
   try {
     // Usa a sintaxe modular correta da v12
+    const user = auth.currentUser; 
+        if (!user) {
+            alert("Você precisa estar logado!");
+            return;
+        }
     await addDoc(collection(db, "financas"), {
+      uid: user.uid, // Associa o gasto ao usuário logado
       item: item,
       valor: valor,
       categoria: categoria,
@@ -53,7 +59,7 @@ async function salvarGasto() {
     console.error("Erro ao salvar:", e);
     alert("Erro ao salvar. Verifique o console.");
   }
-}
+}*/
 
 // Ponte essencial para o 'onclick' do HTML funcionar
 window.salvarGasto = salvarGasto;

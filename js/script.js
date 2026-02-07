@@ -25,8 +25,10 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-
+let unsubscribeFinancas = null;
 // ============================================================================
 // CONFIGURAÇÃO DO FIREBASE
 // ============================================================================
@@ -36,7 +38,7 @@ const firebaseConfig = {
   projectId: "ai-plus-defce",
   storageBucket: "ai-plus-defce.firebasestorage.app",
   messagingSenderId: "487321331111",
-  appId: "1:487321331111:web:28f39eced2604c02110282"
+  appId: "1:487321331111:web:28f39eced2604c02110282",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -45,12 +47,119 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 ativarSincronizacaoNuvem();
+window.auth = auth; // Expondo o auth para o escopo global (debug)
+window.db = db; // Expondo o db para o escopo global (debug)
 
 // ============================================================================
 // FUNÇÕES DE SERVIÇO (NOTIFICAÇÕES E DB)
 // ============================================================================
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("💾 [SISTEMA] Persistência de Login ativada (LOCAL).");
+    // Só depois de ativar a persistência, iniciamos o monitor
+    iniciarMonitoramentoDeLogin();
+  })
+  .catch((error) => {
+    console.error("❌ Erro na persistência:", error);
+  });
 
+function iniciarMonitoramentoDeLogin() {
+  onAuthStateChanged(auth, (user) => {
+    // 1. Captura de todos os elementos necessários
+    const btnLogin = document.getElementById("btn-login-google");
+    const btnLogout = document.getElementById("btn-logout-google"); // O novo botão de sair nas configs
+    const saudacaoTexto = document.getElementById("saudacao-texto");
+    const statusTextoConfig = document.getElementById("auth-status-texto"); // Texto de status nas configs
+
+    // Botão de transação (seu seletor de força bruta)
+    const btnFinanceiro =
+      document.querySelector(".btn-confirmar-fin") ||
+      document.querySelector("button[onclick='salvarTransacao()']");
+
+    if (user) {
+      console.log(
+        `🟢 [LOGIN] Pessoa Conectada: ${user.email} (UID: ${user.uid})`,
+      );
+      window.usuarioAtual = user;
+
+      // --- LOGICA DE INTERFACE (CONFIGURAÇÕES) ---
+      if (btnLogin) btnLogin.style.display = "none";
+      if (btnLogout) btnLogout.style.display = "block";
+      if (statusTextoConfig)
+        statusTextoConfig.innerText = `Conectado como: ${user.email}`;
+
+      // --- LOGICA DE INTERFACE (HOME / SAUDAÇÃO) ---
+      const nomeParaExibir = obterNomePrioritario();
+      const hora = new Date().getHours();
+      const periodo =
+        hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
+      if (saudacaoTexto) {
+        saudacaoTexto.innerText = `${periodo}, ${nomeParaExibir}`;
+      }
+
+      // --- DESBLOQUEIO DE FORÇA BRUTA ---
+      if (btnFinanceiro) {
+        btnFinanceiro.disabled = false;
+        btnFinanceiro.removeAttribute("disabled");
+        btnFinanceiro.innerText = "Confirmar Transação";
+        btnFinanceiro.style.opacity = "1";
+        btnFinanceiro.style.cursor = "pointer";
+      }
+
+      // --- DISPARO DE DADOS ---
+      carregarTarefasPendentes();
+      ativarSincronizacaoNuvem();
+    } else {
+      console.log("🔴 [LOGIN] Nenhum Player detectado (Sessão Null).");
+
+      // --- LOGICA DE INTERFACE (CONFIGURAÇÕES) ---
+      if (btnLogin) btnLogin.style.display = "block";
+      if (btnLogout) btnLogout.style.display = "none";
+      if (statusTextoConfig)
+        statusTextoConfig.innerText = "Sincronização desativada.";
+
+      // --- LOGICA DE INTERFACE (HOME) ---
+      if (saudacaoTexto) saudacaoTexto.innerText = "Identidade Requerida";
+
+      // --- BLOQUEIO DE SEGURANÇA ---
+      if (btnFinanceiro) {
+        btnFinanceiro.disabled = true;
+        btnFinanceiro.innerText = "Faça Login Primeiro";
+        btnFinanceiro.style.opacity = "0.5";
+        btnFinanceiro.style.cursor = "not-allowed";
+      }
+    }
+  });
+}
 async function salvarTokenNoFirestore(userId, token) {
+  // Segurança: Se não tiver ID ou for anônimo, não tenta salvar no banco (evita o erro)
+  if (!userId || userId.startsWith("anon_")) {
+    console.log("⚠️ Token guardado localmente (Usuário não autenticado).");
+    return;
+  }
+
+  try {
+    // CORREÇÃO CRÍTICA: Mudamos de "CHRONOS_ADMIN" para 'userId' (o ID real do usuário)
+    const tokenRef = doc(db, `users/${userId}/tokens`, token);
+
+    await setDoc(tokenRef, {
+      token: token,
+      createdAt: serverTimestamp(), // Certifique-se que serverTimestamp está importado!
+      userAgent: navigator.userAgent,
+    });
+    console.log("✅ Token de notificação vinculado ao usuário:", userId);
+  } catch (e) {
+    // Se der erro de permissão agora, é porque as Rules não carregaram ou o user caiu
+    console.warn(
+      "⚠️ O banco bloqueou o salvamento do token (Permissões):",
+      e.message,
+    );
+  }
+}
+// Não esqueça de exportar
+window.salvarTokenNoFirestore = salvarTokenNoFirestore;
+/*async function salvarTokenNoFirestore(userId, token) {
   try {
     // FORÇAMOS o uso do ID do Administrador para o Oráculo te achar
     const adminId = "CHRONOS_ADMIN";
@@ -71,7 +180,7 @@ async function salvarTokenNoFirestore(userId, token) {
     console.error("❌ Erro ao salvar no Firestore:", e);
   }
 }
-
+*/
 // Função para ativar as notificações e capturar o Token
 async function ativarNotificacoesPush() {
   try {
@@ -208,20 +317,24 @@ onMessage(messaging, (payload) => {
   }
 });
 
-// Login Google (Exemplo)
 async function login() {
   try {
     const result = await signInWithPopup(auth, provider);
-    console.log("Logado:", result.user.uid);
-    // Ao logar, tenta salvar o token se já existir
+    console.log("✅ Login realizado:", result.user.uid);
+
+    // Salva o token FCM (se existir a função)
     const token = localStorage.getItem("fcm_token");
-    if (token) {
+    if (token && typeof salvarTokenNoFirestore === "function") {
       await salvarTokenNoFirestore(result.user.uid, token);
     }
+
+    // Não precisa de window.location.reload()! O passo 2 já atualiza a tela.
   } catch (err) {
-    console.error("Erro login:", err);
+    console.error("Erro no login:", err);
+    alert("Falha no login: " + err.message);
   }
 }
+window.login = login;
 
 // ============================================================================
 // 1. ESTADO GLOBAL & CONSTANTES
@@ -630,25 +743,33 @@ function fecharModalFinanceiro() {
   document.getElementById("modal-transacao").classList.add("hidden");
 }
 async function salvarTransacao() {
-  // 1. Pega os valores do HTML
-  const desc = document.getElementById("input-desc-transacao").value;
-  const valor = parseFloat(
-    document.getElementById("input-valor-transacao").value,
-  );
+  // Aguarda até o auth estar pronto e o usuário logado
+  const user = await new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      unsubscribe(); // Para de ouvir depois do primeiro callback
+      resolve(u);
+    });
+  });
 
-  // IMPORTANTE: Verifique se o ID do select no seu HTML é realmente este
-  const elementoTipo = document.getElementById("input-tipo-transacao");
-  const tipo = elementoTipo ? elementoTipo.value : "saida"; // Se não achar, assume saida
+  if (!user) {
+    return alert("Você precisa estar logado para salvar transações!");
+  }
 
-  const categoria = document.getElementById("input-categoria-transacao").value;
+  console.log("Usuário logado encontrado:", user.uid);
 
-  if (!desc || isNaN(valor)) return alert("Preencha corretamente!");
-  const user = auth.currentUser;
-  if (!user) return alert("Você precisa estar logado!");
+  const desc = document.getElementById("input-desc-transacao")?.value?.trim();
+  const valorStr = document.getElementById("input-valor-transacao")?.value;
+  const valor = parseFloat(valorStr);
+  const tipo =
+    document.getElementById("input-tipo-transacao")?.value || "saida";
+  const categoria =
+    document.getElementById("input-categoria-transacao")?.value || "Geral";
+
+  if (!desc || isNaN(valor)) {
+    return alert("Preencha descrição e valor corretamente!");
+  }
 
   try {
-    // 2. ENVIA APENAS PARA A NUVEM ☁️
-    // (Não fazemos push no array local, deixamos o onSnapshot cuidar disso)
     await addDoc(collection(db, "financas"), {
       uid: user.uid,
       item: desc,
@@ -658,11 +779,12 @@ async function salvarTransacao() {
       data: serverTimestamp(),
     });
 
-    // 3. Fecha o modal e espera a mágica do onSnapshot
+    console.log("Transação salva com sucesso no Firestore");
     fecharModalFinanceiro();
+    alert("Transação registrada!");
   } catch (e) {
-    console.error("Erro ao salvar:", e);
-    alert("Erro ao conectar com o Reino.");
+    console.error("Erro ao salvar transação:", e);
+    alert("Erro ao salvar: " + e.message);
   }
 }
 function renderizarFinancas() {
@@ -753,29 +875,31 @@ async function deletarTransacao(id) {
 // 7. DASHBOARD E GRÁFICOS
 // ============================================================================
 function atualizarDashboard() {
-  // ... (Mantenha a parte da saudação e saldo que já estava lá) ...
-  const hora = new Date().getHours();
-  const saudacao =
-    hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
-  document.getElementById("saudacao-texto").innerText =
-    `${saudacao}, ${getNomeUsuario()}`;
+  // 1. SAUDAÇÃO (Backup se o onAuthStateChanged demorar)
+  const saudacaoElemento = document.getElementById("saudacao-texto");
+  if (saudacaoElemento && saudacaoElemento.innerText === "Carregando...") {
+    const hora = new Date().getHours();
+    const saudacao =
+      hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+    saudacaoElemento.innerText = `${saudacao}, ${getNomeUsuario()}`;
+  }
 
-  // CÁLCULO DO SALDO (Mantenha igual)
+  // 2. SALDO (Home)
+  // Usamos as transações que já estão na memória (sincronizadas pela nuvem)
   let ent = 0,
     sai = 0;
   transacoes.forEach((t) =>
     t.tipo === "entrada" ? (ent += t.valor) : (sai += t.valor),
   );
   const resumoSaldo = document.getElementById("resumo-saldo-home");
-  if (resumoSaldo)
+  if (resumoSaldo) {
     resumoSaldo.innerText = (ent - sai).toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
+  }
 
-  // --- A CORREÇÃO ESTÁ AQUI EMBAIXO ---
-
-  // 1. RESTAURA AS TAREFAS NO "FOCO DE HOJE"
+  // 3. FOCO DE HOJE (Tarefas Pendentes do LocalStorage)
   const pendentes = tarefas.filter((t) => !t.feita);
   const badgeTarefas = document.getElementById("contagem-tarefas");
   if (badgeTarefas) badgeTarefas.innerText = pendentes.length;
@@ -786,22 +910,81 @@ function atualizarDashboard() {
       ? ""
       : "<p style='color:#888; font-size: 0.8rem;'>Nenhuma missão ativa.</p>";
 
-    // Desenha as tarefas (isso tinha sido apagado)
+    // Exibe as 3 primeiras tarefas pendentes
     pendentes.slice(0, 3).forEach((t) => {
       listaTarefasHome.innerHTML += `
-                <div style='margin: 5px 0; padding: 8px; background: rgba(0, 212, 255, 0.1); border-left: 3px solid #00d4ff; border-radius: 4px; font-size: 0.9rem;'>
-                    🔹 ${t.titulo}
-                </div>`;
+        <div style='margin: 8px 0; padding: 12px; background: rgba(0, 212, 255, 0.1); border-left: 4px solid #00d4ff; border-radius: 6px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;'>
+            <span style="font-size: 1.2rem;">🎯</span>
+            <div>
+                <strong style="color: #fff;">${t.titulo}</strong><br>
+                <small style="color: #00d4ff; font-size: 0.75rem;">${t.categoria}</small>
+            </div>
+        </div>`;
     });
   }
 
-  // 2. CHAMA O HISTÓRICO PARA O NOVO LUGAR
-  if (typeof renderizarHistorico === "function") {
+  // 4. HISTÓRICO FINANCEIRO (Home)
+  renderizarHistorico();
+}
+// 2. CHAMA O HISTÓRICO PARA O NOVO LUGAR
+/* if (typeof renderizarHistorico === "function") {
     renderizarHistorico();
+  }*/
+// ============================================================================
+// FUNÇÃO PARA CARREGAR TAREFAS NA HOME (Foco de Hoje)
+// ============================================================================
+function carregarTarefasPendentes() {
+  console.log("🔍 [SISTEMA] Atualizando Foco de Hoje...");
+
+  // 1. Pega as tarefas do LocalStorage
+  const tarefasLocais =
+    JSON.parse(localStorage.getItem("chronos_tarefas")) || [];
+
+  // 2. Filtra apenas as que NÃO estão prontas
+  const pendentes = tarefasLocais.filter((t) => !t.feita);
+
+  // 3. Atualiza a contagem (o badge circular)
+  const badge = document.getElementById("contagem-tarefas");
+  if (badge) badge.innerText = pendentes.length;
+
+  // 4. Renderiza na Home
+  const listaHome = document.getElementById("lista-resumo-home");
+  if (!listaHome) return;
+
+  listaHome.innerHTML = "";
+
+  if (pendentes.length === 0) {
+    listaHome.innerHTML =
+      "<p style='color:#888; font-size: 0.8rem; text-align:center;'>Nenhuma missão pendente. Descanso merecido!</p>";
+    return;
   }
 
-  // ... (Mantenha o resto dos gráficos) ...
+  // Mostra apenas as 3 primeiras para não poluir a Home
+  pendentes.slice(0, 3).forEach((t) => {
+    const item = document.createElement("div");
+    item.style.margin = "8px 0";
+    item.style.padding = "12px";
+    item.style.background = "rgba(0, 212, 255, 0.05)";
+    item.style.borderLeft = "4px solid var(--primary-color)";
+    item.style.borderRadius = "6px";
+    item.style.display = "flex";
+    item.style.alignItems = "center";
+    item.style.gap = "10px";
+
+    item.innerHTML = `
+            <span style="font-size: 1.2rem;">🎯</span>
+            <div>
+                <strong style="color: #fff; font-size: 0.9rem;">${t.titulo}</strong><br>
+                <small style="color: var(--primary-color); font-size: 0.7rem; text-transform: uppercase;">${t.categoria}</small>
+            </div>
+        `;
+    listaHome.appendChild(item);
+  });
 }
+
+// Torna global para evitar erros de referência
+window.carregarTarefasPendentes = carregarTarefasPendentes;
+// ... (Mantenha o resto dos gráficos) ...
 
 function verificarStreak() {
   const todasFeitas = tarefas.length > 0 && tarefas.every((t) => t.feita);
@@ -826,11 +1009,29 @@ function verificarStreak() {
 function salvarNovoNome() {
   const input = document.getElementById("config-nome-input");
   const novoNome = input.value.trim();
+
   if (novoNome) {
+    // 1. Salva no LocalStorage
     localStorage.setItem("chronos_user_name", novoNome);
-    atualizarDashboard();
-    alert("Nome atualizado!");
+
+    // 2. Atualiza a saudação na tela imediatamente
+    const hora = new Date().getHours();
+    const saudacaoPeriodo =
+      hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+
+    const saudacaoElemento = document.getElementById("saudacao-texto");
+    if (saudacaoElemento) {
+      saudacaoElemento.innerText = `${saudacaoPeriodo}, ${novoNome}`;
+    }
+
+    // 3. Feedback visual
+    alert("Identidade atualizada, John!");
     input.value = "";
+
+    // 4. Volta para a Home para ver o resultado
+    mostrarSecao("home");
+  } else {
+    alert("Digite um nome válido para o Oráculo!");
   }
 }
 
@@ -1231,91 +1432,120 @@ function atualizarGraficoPizza() {
     },
   });
 }
-// Função de Sincronização Segura
-// Importante: Certifique-se de que 'onSnapshot', 'collection', 'query' e 'orderBy'
-// foram importados do firebase/firestore no topo do seu arquivo.
+// Função para decidir qual nome mostrar (Prioriza o manual, depois Google, depois Player)
+function obterNomePrioritario() {
+  // 1. Tenta pegar o nome que você digitou na Identidade (Configurações)
+  const nomePersonalizado = localStorage.getItem("chronos_user_name");
 
-// Sincronização compatível com Firebase 10.8.0
-// Importante: Verifique se no topo do seu script você importou:
-// import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  // 2. Se não houver, tenta pegar o primeiro nome da conta Google
+  const nomeGoogle =
+    auth.currentUser && auth.currentUser.displayName
+      ? auth.currentUser.displayName.split(" ")[0]
+      : null;
 
-// Substitua a função 'ativarSincronizacaoNuvem' inteira por esta:
+  // 3. Retorna o que encontrar, ou o padrão "Player"
+  return nomePersonalizado || nomeGoogle || "Player";
+}
 
-async function ativarSincronizacaoNuvem() {
-  // Ouve se o usuário logou ou deslogou
-  // Requer import { onAuthStateChanged } do firebase-auth
+// Torna a função global para evitar erros de escopo
+window.obterNomePrioritario = obterNomePrioritario;
+
+function ativarSincronizacaoNuvem() {
   onAuthStateChanged(auth, (user) => {
-    // CENÁRIO 1: USUÁRIO LOGADO
-    if (user) {
-      console.log("🔒 Sincronizando dados seguros de:", user.uid);
+    // Expõe o auth para o console para podermos testar
+    window.auth = auth;
 
-      // AQUI ESTÁ A BLINDAGEM:
-      // Requer import { where } do firebase-firestore
+    if (user) {
+      console.log("🛡️ [RANK S] Usuário logado:", user.uid);
+
+      // Função para caçar e desbloquear o botão repetidamente
+      const vigiaBotao = setInterval(() => {
+        const btn =
+          document.querySelector(".btn-confirmar-fin") ||
+          document.querySelector("button[onclick='salvarTransacao()']");
+
+        if (btn) {
+          btn.disabled = false;
+          btn.removeAttribute("disabled");
+          btn.style.opacity = "1";
+          btn.style.pointerEvents = "auto";
+          console.log("✅ [SISTEMA] Botão de transação DESBLOQUEADO.");
+          clearInterval(vigiaBotao); // Para de procurar quando achar
+          carregarTarefasPendentes(user.uid);
+        }
+      }, 500);
+
+      // Inicia o rádio do banco de dados
+      if (unsubscribeFinancas) unsubscribeFinancas();
       const q = query(
         collection(db, "financas"),
-        where("uid", "==", user.uid), // <--- SÓ TRAZ O QUE É MEU
+        where("uid", "==", user.uid),
         orderBy("data", "desc"),
       );
 
-      onSnapshot(
+      // Guardamos o retorno do onSnapshot na nossa variável global
+      unsubscribeFinancas = onSnapshot(
         q,
         (snapshot) => {
-          transacoes.length = 0; // Limpa a memória local
+          transacoes.length = 0; // Limpa a lista local antes de preencher
           let saldoAcumulado = 0;
 
           snapshot.forEach((doc) => {
             const d = doc.data();
             transacoes.push({
-              id: doc.id, // Fundamental para deletar
-              item: d.item || d.desc,
-              valor: Number(d.valor),
+              id: doc.id,
+              item: d.item || d.desc || "Sem descrição",
+              valor: Number(d.valor) || 0,
               categoria: d.categoria || "Geral",
               tipo: d.tipo || "saida",
               data: d.data?.toDate() || new Date(),
             });
 
-            // Calcula Saldo
             if (d.tipo === "entrada") saldoAcumulado += Number(d.valor);
             else saldoAcumulado -= Number(d.valor);
           });
 
-          // --- ATUALIZAÇÃO DA TELA (Igual ao seu código original) ---
-
-          // 1. Saldo Texto
+          // Atualiza o saldo na tela
           const saldoElemento = document.getElementById("saldo-carteira");
           if (saldoElemento) {
             saldoElemento.innerText = `R$ ${saldoAcumulado.toFixed(2)}`;
+            saldoElemento.style.color =
+              saldoAcumulado >= 0 ? "#2ecc71" : "#ff5555";
           }
 
-          // 2. Gráficos e Listas
-          if (typeof atualizarGraficoPizza === "function")
-            atualizarGraficoPizza();
+          // Atualiza toda a interface de Rank S
           if (typeof renderizarFinancas === "function") renderizarFinancas();
           if (typeof atualizarDashboard === "function") atualizarDashboard();
           if (typeof renderizarHistorico === "function") renderizarHistorico();
+          if (typeof atualizarGraficoPizza === "function")
+            atualizarGraficoPizza();
         },
         (error) => {
-          // CAPTURA DE ERRO DE ÍNDICE
-          console.error("Erro na leitura protegida:", error);
-          if (error.code === "failed-precondition") {
-            alert(
-              "⚠️ ATENÇÃO CHRONOS: Abra o Console (F12) e clique no link do Firebase para criar o índice de segurança!",
-            );
-          }
+          console.error("❌ Erro no Oráculo (Firestore):", error);
         },
       );
     } else {
-      // CENÁRIO 2: DESLOGADO
-      console.log("Usuário saiu. Limpando dados.");
-      transacoes = [];
-      if (typeof renderizarFinancas === "function") renderizarFinancas();
-      if (typeof atualizarDashboard === "function") atualizarDashboard();
+      console.log("⚠️ [SISTEMA] Usuário deslogado.");
+      window.auth = auth;
+    }
 
+    // Bloqueia o botão se não houver login
+    /*if (btnConfirmar) {
+        btnConfirmar.disabled = true;
+        btnConfirmar.style.opacity = "0.5";
+        btnConfirmar.style.cursor = "not-allowed";
+      }
+
+      transacoes = []; // Limpa os dados por segurança
       const saldoElemento = document.getElementById("saldo-carteira");
       if (saldoElemento) saldoElemento.innerText = "R$ 0,00";
-    }
+    }*/
   });
 }
+
+// Garante que o sistema chame a função corretamente
+window.ativarSincronizacaoNuvem = ativarSincronizacaoNuvem;
+
 function renderizarHistorico() {
   const container = document.getElementById("lista-financas-home");
   if (!container) return;
@@ -1325,6 +1555,7 @@ function renderizarHistorico() {
   // CORREÇÃO: Removemos o .reverse()
   // Como o Firebase já manda ordenado (DESC), basta pegar os 4 primeiros (.slice(0,4))
   transacoes.slice(0, 3).forEach((t) => {
+    console.log("🔍 Dados da transação no banco:", t);
     const item = document.createElement("div");
     item.className = "card transacao-item";
 
@@ -1337,7 +1568,7 @@ function renderizarHistorico() {
     const isEntrada = t.tipo === "entrada";
     const cor = isEntrada ? "#2ecc71" : "#ff4d4d";
     const sinal = isEntrada ? "+" : "-";
-    const nome = t.item || t.desc || "Sem nome";
+    const nome = t.item || t.descricao || "Sem nome";
 
     item.innerHTML = `
             <div class="info">
@@ -1396,7 +1627,100 @@ function atualizarModuloEstudos() {
     if (txt) txt.innerText = pct + "%";
   });
 }
+function logout() {
+  auth
+    .signOut()
+    .then(() => {
+      console.log("Logout realizado");
+      alert("Você saiu da conta.");
+      window.location.reload();
+    })
+    .catch((err) => {
+      console.error("Erro no logout:", err);
+      alert("Erro ao sair: " + err.message);
+    });
+}
+window.verificarAuth = () => {
+  if (auth.currentUser) {
+    console.log(
+      "Usuário logado:",
+      auth.currentUser.uid,
+      auth.currentUser.email,
+      auth.currentUser.displayName,
+    );
+  } else {
+    console.log("Nenhum usuário logado (auth.currentUser é null)");
+  }
+};
+// ======================================================
+// 💰 FUNÇÃO DE SALVAR GASTOS (Mova isto para o script.js)
+// ======================================================
+async function salvarGasto() {
+  // 1. Captura os elementos do HTML (IDs exatos do seu print anterior)
+  const valorInput = document.getElementById("valor");
+  const descInput = document.getElementById("descriçao"); // Use o ID com 'ç' conforme seu HTML
+  const categoriaSelect = document.getElementById("categoriaGasto");
 
+  // 2. Verificação de segurança (Se o JS não achar o campo, ele avisa no console)
+  if (!descInput) {
+    console.error(
+      "❌ Erro: O campo com id='descriçao' não foi encontrado no HTML.",
+    );
+    alert("Erro técnico: Campo de descrição não encontrado.");
+    return;
+  }
+
+  // 3. Extrai e limpa os valores
+  const valor = parseFloat(valorInput.value);
+  const descricaoTexto = descInput.value.trim();
+  const categoria = categoriaSelect ? categoriaSelect.value : "Geral";
+
+  // 4. Verifica se o usuário está logado
+  const user = auth.currentUser;
+  if (!user) {
+    alert("⚠️ Erro: Você precisa fazer login antes de salvar!");
+    return;
+  }
+
+  // 5. Validações básicas (Impedir salvar vazio)
+  if (!descricaoTexto || descricaoTexto === "") {
+    alert("⚠️ Por favor, digite o NOME do gasto (ex: Buso).");
+    return;
+  }
+
+  if (!valor || isNaN(valor)) {
+    alert("⚠️ Por favor, digite um VALOR válido.");
+    return;
+  }
+
+  try {
+    // 6. Salva no Firestore
+    await addDoc(collection(db, "financas"), {
+      uid: user.uid,
+      valor: valor,
+      categoria: categoria,
+      item: descricaoTexto, // Aqui entra o "Buso", "Lanche", etc.
+      data: serverTimestamp(),
+      tipo: "saida",
+    });
+
+    console.log("✅ Salvo no Firebase:", descricaoTexto);
+    alert("Gasto salvo com sucesso!");
+
+    // 7. Limpa os campos
+    valorInput.value = "";
+    descInput.value = "";
+  } catch (error) {
+    console.error("❌ Erro ao salvar:", error);
+    alert("Erro ao salvar: " + error.message);
+  }
+}
+
+// Não esqueça de manter esta linha no final do script.js
+window.salvarGasto = salvarGasto;
+
+// TORNAR A FUNÇÃO PÚBLICA (Essencial para o botão do HTML funcionar)
+window.salvarGasto = salvarGasto;
 // Chame isso dentro da sua função mostrarSecao('estudos')
 // EXPORTAÇÕES PARA O HTML
 window.abrirModal = abrirModal;
@@ -1421,10 +1745,24 @@ window.abrirSistema = abrirSistema;
 window.fecharSistema = fecharSistema;
 window.realizarAcao = realizarAcao;
 window.login = login;
+window.logout = logout;
 window.estadoQuest = estadoQuest;
 window.salvarEstado = salvarEstado;
 window.renderizarJanelaSistema = renderizarJanelaSistema;
 window.tarefas = tarefas; // Necessário para o Teste 3
 window.renderizarTarefas = renderizarTarefas; // Necessário para o Teste 3
 window.salvarTokenNoFirestore = salvarTokenNoFirestore;
-window.db = db; // Exportando o banco para garantir
+window.ativarSincronizacaoNuvem = ativarSincronizacaoNuvem;
+window.atualizarDashboard = atualizarDashboard;
+window.verificarStreak = verificarStreak;
+window.iniciarRelogio = iniciarRelogio;
+window.configurarZeusVigilia = configurarZeusVigilia;
+window.atualizarGraficoTarefas = atualizarGraficoTarefas;
+window.atualizarGraficoFinancas = atualizarGraficoFinancas;
+window.atualizarGraficoPizza = atualizarGraficoPizza;
+window.renderizarHistorico = renderizarHistorico;
+window.atualizarModuloEstudos = atualizarModuloEstudos;
+window.db = db; // Expondo o banco para o console (apenas para testes, cuidado com isso em produção)
+window.auth = auth; // Isso vai resolver o erro do console!
+ativarSincronizacaoNuvem();
+window.salvarGasto = salvarGasto;
