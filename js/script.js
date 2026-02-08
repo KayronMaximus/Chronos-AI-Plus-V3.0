@@ -177,12 +177,19 @@ async function ativarNotificacoesPush() {
 
     // 3. REGISTRO CORRIGIDO (RAIZ ABSOLUTA)
     // Removemos o '.' e deixamos apenas o '/' para indicar a raiz do domínio
-    const registration = await navigator.serviceWorker.register(
-      "./firebase-messaging-sw.js",
-      {
-        scope: "./",
-      },
-    );
+    const isGitHub = window.location.hostname.includes("github.io");
+
+    // Se estiver no GitHub, precisamos do nome do repositório no caminho
+    // Se estiver no localhost, a raiz '/' basta.
+    const swPath = isGitHub
+      ? `/${window.location.pathname.split("/")[1]}/firebase-messaging-sw.js`
+      : "/firebase-messaging-sw.js";
+
+    const registration = await navigator.serviceWorker.register(swPath, {
+      scope: isGitHub ? `/${window.location.pathname.split("/")[1]}/` : "/",
+    });
+
+    console.log("✅ Service Worker registrado com sucesso em:", swPath);
     await registration.update();
     // 4. GARANTIA DE ATIVAÇÃO (O Android precisa disso)
     // Às vezes o SW registra mas não "ativa" a tempo do token ser gerado
