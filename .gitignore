@@ -1,3 +1,13 @@
-chave.json
-node_modules/
+# Credenciais e Segredos
 .env
+chave.json
+*.py
+
+# Pastas de Dependências e Cache
+node_modules/
+__pycache__/
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-error.log*

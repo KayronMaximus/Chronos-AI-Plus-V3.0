@@ -1332,7 +1332,12 @@ async function iniciarConsagracaoFinal() {
     const API_KEY = localStorage.getItem("gemini_api_key");
     const BOT_TOKEN = localStorage.getItem("chronos_telegram_token");
     const CHAT_ID = localStorage.getItem("chronos_chat_id");
-
+    if (!API_KEY || !BOT_TOKEN || !CHAT_ID) {
+      alert(
+        "⚠️ Configure suas chaves na aba de Configurações antes de continuar!",
+      );
+      return;
+    }
     let resumoFinal = resumoInput.value;
 
     if (temArquivo) {
