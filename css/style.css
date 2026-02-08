@@ -1001,3 +1001,362 @@ main {
   border-radius: 10px;
   overflow: hidden;
 }
+/* CONTAINER DO GRIMÓRIO */
+/* Container da Lista para não embolar com o formulário */
+.grimorio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+/* Estilo Exclusivo para os Cards de Resultado */
+.grimorio-item {
+  background: linear-gradient(165deg, #0d1117 0%, #05070a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.grimorio-item:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 212, 255, 0.3) !important;
+}
+
+/* Badge de Categoria */
+.grimorio-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Bloco de Resumo da IA */
+.grimorio-resumo-box {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.grimorio-resumo-box p {
+  white-space: pre-wrap !important;
+  color: #cbd5e0 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+  margin: 0;
+}
+
+/* BOTÕES DE AÇÃO */
+.btn-acesso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  flex: 1;
+}
+
+.btn-acesso:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px currentColor;
+}
+
+.btn-deletar-grimorio {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 10px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-deletar-grimorio:hover {
+  background: #ff4d4d;
+  color: #fff;
+}
+/* CONTAINER DA LISTA */
+.grimorio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* CARDS DE RESULTADO (SOLO LEVELING STYLE) */
+.grimorio-item-novo {
+  background: linear-gradient(160deg, #0d1117 0%, #05070a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+
+
+/* BOTÃO ACESSAR SABER */
+.action-btn:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+}
+#lista-grimorio {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px 0 !important;
+}
+
+/* Ajuste do formulário para não ficar esticado */
+#form-inscricao.card {
+  background: #1a1a1a !important;
+  border: 1px solid #333 !important;
+  margin-bottom: 30px !important;
+}
+
+#form-inscricao input,
+#form-inscricao textarea,
+#form-inscricao select {
+  background: #000 !important;
+  border: 1px solid #444 !important;
+  color: #00d4ff !important;
+}
+/* Container da lista para não bugar o formulário */
+#lista-grimorio {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* O Card Individual */
+.grimorio-card-item {
+  background: #161b22 !important; /* Um cinza azulado muito escuro, mas visível */
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.grimorio-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.grimorio-card-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.grimorio-card-badge {
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+
+.grimorio-card-resumo {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.grimorio-card-resumo p {
+  white-space: pre-wrap;
+  color: #c9d1d9;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.grimorio-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/*.grimorio-btn-acessar {
+  flex: 1;
+  text-decoration: none;
+  text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  transition: 0.3s;
+}
+
+.grimorio-btn-acessar:hover {
+  filter: brightness(1.2);
+}
+
+.grimorio-btn-delete {
+  background: none;
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  border-radius: 6px;
+  padding: 0 15px;
+  cursor: pointer;
+}*/
+/* --- ESTILIZAÇÃO DO FORMULÁRIO DE INSCRIÇÃO --- */
+#form-inscricao.card {
+  background: linear-gradient(165deg, #0d1117 0%, #05070a 100%) !important;
+  border: 1px solid rgba(0, 212, 255, 0.2) !important; /* Borda ciano sutil */
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Alinhamento da div que você apontou */
+.materia-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Espaço uniforme entre os campos */
+}
+
+/* Inputs, Textarea e Select dentro do formulário */
+#form-inscricao .input-dark {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  padding: 12px !important;
+  font-size: 0.9rem !important;
+  width: 100% !important;
+  transition: 0.3s;
+}
+
+#form-inscricao .input-dark:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+  outline: none;
+}
+
+/* --- ESTILIZAÇÃO DOS CARDS DE ESTUDO (RESULTADOS) --- */
+.grimorio-card-item {
+  background: linear-gradient(160deg, #0d1117 0%, #05070a 100%) !important;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.grimorio-card-resumo {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 15px 0;
+}
+
+.grimorio-card-resumo p {
+  white-space: pre-wrap; /* Mantém bullet points da IA */
+  color: #cbd5e0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+/* Card de Estudo Individual */
+/* --- CORREÇÃO FINAL DOS CARDS --- */
+
+/* O Card em si */
+.grimorio-item-novo {
+    background: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    border-left: 5px solid transparent !important; /* A cor vem do inline style */
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    display: flex;       /* <--- ADICIONE ISSO */
+    flex-direction: column; /* <--- ADICIONE ISSO */
+    gap: 15px;           /* <--- ADICIONE ISSO */
+}
+
+/* Container dos Botões (Para ficarem lado a lado) */
+.grimorio-botoes-container {
+    display: flex !important;
+    flex-direction: row !important; /* Força ficar um ao lado do outro */
+    gap: 10px !important;
+    align-items: stretch !important; /* Mesma altura */
+    width: 100%;
+}
+
+/* Botão Acessar */
+.grimorio-btn-acessar {
+    flex: 1; /* Ocupa todo o espaço possível */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.85rem;
+    transition: 0.2s;
+}
+
+/* Botão Lixeira */
+.grimorio-btn-delete {
+    width: 50px; /* Largura fixa */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid #ff4d4d;
+    color: #ff4d4d;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.grimorio-btn-delete:hover {
+    background: #ff4d4d;
+    color: #fff;
+}
+
+/* Caixa onde fica o resumo do Gemini */
+.caixa-resumo {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.caixa-resumo p {
+  white-space: pre-wrap !important; /* Essencial para manter as quebras de linha da IA */
+  color: #bbb !important;
+  font-size: 0.85rem !important;
+  line-height: 1.5 !important;
+  margin: 0;
+}
+/*.caixa-resumo {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}*/
+/*
+.caixa-resumo p {
+  white-space: pre-wrap !important; /* MANTÉM OS BULLET POINTS */
+ /* color: #cbd5e0 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+  margin: 0;
+}*/

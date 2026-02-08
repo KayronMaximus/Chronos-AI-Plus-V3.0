@@ -1,10 +1,11 @@
+// Mude de 12.8.0 para 10.12.2
 importScripts(
-  "https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging-compat.js",
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js",
 );
-console.log("[SW] Iniciando firebase-messaging-sw.js – versão 12.8.0");
+console.log("[SW] Iniciando firebase-messaging-sw.js – versão 10.12.2");
 console.log(
   "[firebase-messaging-sw.js] Service Worker carregado e inicializado",
 );
@@ -14,7 +15,7 @@ const firebaseConfig = {
   projectId: "ai-plus-defce",
   storageBucket: "ai-plus-defce.firebasestorage.app",
   messagingSenderId: "487321331111",
-  appId: "1:487321331111:web:28f39eced2604c02110282"
+  appId: "1:487321331111:web:28f39eced2604c02110282",
 };
 
 firebase.initializeApp(firebaseConfig);

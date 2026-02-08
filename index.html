@@ -183,6 +183,24 @@
                 <button onclick="logout()" class="action-btn" style="background: #ff4444; margin-top: 10px;">
                     Sair (Logout)
                 </button>
+                <div class="card">
+                    <h3>🔐 Chaves de Segurança (Telegram)</h3>
+                    <p style="font-size: 0.8rem; color: #aaa;">
+                        Necessário para fazer upload de arquivos. Essas chaves ficam salvas apenas no seu dispositivo.
+                    </p>
+
+                    <label style="color: #00d4ff; font-size: 0.8rem;">Bot Token:</label>
+                    <input type="password" id="config-telegram-token" class="input-dark"
+                        placeholder="Ex: 123456:ABC-Def..." style="margin-bottom: 10px;">
+
+                    <label style="color: #00d4ff; font-size: 0.8rem;">Chat ID:</label>
+                    <input type="text" id="config-chat-id" class="input-dark" placeholder="Ex: -100517..."
+                        style="margin-bottom: 10px;">
+
+                    <button onclick="salvarConfigTelegram()" class="action-btn" style="width: 100%;">
+                        💾 Salvar Chaves
+                    </button>
+                </div>
             </section>
             <section id="view-estudos" class="view hidden">
                 <h2>🎓 Central Acadêmica</h2>
@@ -250,6 +268,50 @@
                     </div>
                 </div>
             </section>
+            <section id="view-grimorio" class="view hidden">
+                <header class="header-secao">
+                    <h2>📜 Grimório de Saber</h2>
+                    <p class="data-layer">Conhecimento Sincronizado</p>
+                </header>
+
+                <div class="card" id="form-inscricao">
+                    <h3>✨ Nova Inscrição</h3>
+                    <div class="materia-item">
+                        <select id="grimorio-categoria" class="input-dark"
+                            style="width: 100%; margin-bottom: 10px; border: 1px solid var(--primary-color);">
+                            <option value="CFO">⚔️ Senda do Guerreiro (CFO)</option>
+                            <option value="Pedagogia">🍎 Senda da Mestra (Pedagogia)</option>
+                            <option value="Geral">⚙️ Outros Saberes</option>
+                        </select>
+
+                        <input type="text" id="grimorio-titulo" class="input-dark"
+                            placeholder="Título do Documento (Ex: Direito Penal)">
+                        <label style="color: #aaa; font-size: 0.8rem; margin-top: 10px;">Carregar Arquivo
+                            (PDF/Img):</label>
+                        <input type="file" id="input-arquivo-upload" class="input-dark"
+                            accept="application/pdf, image/*">
+
+                        <textarea id="grimorio-resumo" class="input-dark" style="height: 80px; margin-top: 10px;"
+                            placeholder="Breve resumo ou notas da IA..."></textarea>
+
+                        <input type="text" id="grimorio-link-telegram" class="input-dark" style="margin-top: 10px;"
+                            placeholder="Link do Arquivo (Telegram/Cloud)">
+
+                        <button onclick="adicionarAoGrimorio()" class="action-btn"
+                            style="margin-top: 15px; width: 100%;">
+                            Consagrar no Firestore
+                        </button>
+                        <button onclick="iniciarConsagracaoFinal()" id="btn-consagrar" class="action-btn"
+                            style="margin-top: 15px; width: 100%;">
+                            📤 Enviar e Consagrar (Arquivo)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lista-grimorio" class="grimorio-container"
+                    ,="display: flex; flex-direction: column; gap: 18px; margin-top: 20px;">
+                </div>
+            </section>
         </main>
 
         <nav class="bottom-nav">
@@ -273,6 +335,17 @@
                 <div class="neon-reactor">
                     <div class="core"></div>
                 </div>
+            </button>
+            <button class="nav-btn" onclick="mostrarSecao('grimorio')">
+                <div class="nav-icon-container">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        <path d="M9 7h7"></path>
+                        <path d="M9 11h7"></path>
+                    </svg>
+                </div>
+                <span>Grimório</span>
             </button>
             <button class="nav-btn" onclick="mostrarSecao('carteira')">
                 <svg class="nav-icon" viewBox="0 0 24 24">

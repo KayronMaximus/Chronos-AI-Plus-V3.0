@@ -1,12 +1,12 @@
 // ============================================================================
 // IMPORTAÇÕES DO FIREBASE (MODULAR)
 // ============================================================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getMessaging,
   getToken,
   onMessage,
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 import {
   getFirestore,
   collection,
@@ -14,12 +14,13 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
+  getDocs,
   serverTimestamp,
   deleteDoc,
   doc,
   where,
   setDoc,
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth,
   signInWithPopup,
@@ -27,7 +28,7 @@ import {
   onAuthStateChanged,
   setPersistence,
   browserLocalPersistence,
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 let unsubscribeFinancas = null;
 // ============================================================================
 // CONFIGURAÇÃO DO FIREBASE
@@ -47,8 +48,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 ativarSincronizacaoNuvem();
-window.auth = auth; // Expondo o auth para o escopo global (debug)
-window.db = db; // Expondo o db para o escopo global (debug)
 
 // ============================================================================
 // FUNÇÕES DE SERVIÇO (NOTIFICAÇÕES E DB)
@@ -110,6 +109,7 @@ function iniciarMonitoramentoDeLogin() {
       // --- DISPARO DE DADOS ---
       carregarTarefasPendentes();
       ativarSincronizacaoNuvem();
+      carregarGrimorio();
     } else {
       console.log("🔴 [LOGIN] Nenhum Player detectado (Sessão Null).");
 
@@ -159,28 +159,6 @@ async function salvarTokenNoFirestore(userId, token) {
 }
 // Não esqueça de exportar
 window.salvarTokenNoFirestore = salvarTokenNoFirestore;
-/*async function salvarTokenNoFirestore(userId, token) {
-  try {
-    // FORÇAMOS o uso do ID do Administrador para o Oráculo te achar
-    const adminId = "CHRONOS_ADMIN";
-
-    // Criamos a referência direta para a coleção de tokens do Admin
-    const tokenRef = doc(db, `users/${adminId}/tokens`, token);
-
-    await setDoc(tokenRef, {
-      token: token,
-      originalUserId: userId, // Guardamos o ID anônimo apenas por registro
-      createdAt: new Date(),
-      userAgent: navigator.userAgent,
-      lastActive: new Date(),
-    });
-
-    console.log("✅ Token vinculado ao canal CHRONOS_ADMIN:", adminId);
-  } catch (e) {
-    console.error("❌ Erro ao salvar no Firestore:", e);
-  }
-}
-*/
 // Função para ativar as notificações e capturar o Token
 async function ativarNotificacoesPush() {
   try {
@@ -231,72 +209,7 @@ async function ativarNotificacoesPush() {
     console.error("Erro na ativação do rádio:", err);
   }
 }
-/*async function ativarNotificacoesPush() {
-  try {
-    // 1. Permissão
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.error("Permissão de notificação negada.");
-      return;
-    }
 
-    // 2. Registrar SW
-    const registration = await navigator.serviceWorker.register(
-      "./firebase-messaging-sw.js", // Garanta que este caminho está correto na raiz
-      { scope: "./" },
-    );
-    console.log(
-      "SW registrado. Estado:",
-      registration.active ? "ativo" : "instalando...",
-    );
-
-    // 3. Esperar o SW ficar ACTIVE (Crítico para evitar erros de race condition)
-    let activeRegistration = registration;
-    if (!registration.active) {
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          if (registration.active) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, 100);
-      });
-    }
-
-    // 4. Pedir o Token
-    const token = await getToken(messaging, {
-      vapidKey:
-        "BNVhXVKUWVQaX3N8r9s9MBMJZL7NgH4ClYuYFn-Tf9dvjTnjOgcl2bcxyxbaIFRInt3ADyJj0a_npzzupZtAi8o",
-      serviceWorkerRegistration: registration,
-    });
-
-    if (token) {
-      console.log("⚡ Token FCM obtido:", token);
-      localStorage.setItem("fcm_token", token);
-
-      try {
-        // --- AUTOMAÇÃO DA SALVAÇÃO ---
-        if (auth.currentUser) {
-          await salvarTokenNoFirestore(auth.currentUser.uid, token);
-          console.log("✅ Token vinculado ao usuário logado.");
-        } else {
-          let anonId = localStorage.getItem("anon_device_id");
-          if (!anonId) {
-            anonId = "anon_" + Date.now();
-            localStorage.setItem("anon_device_id", anonId);
-          }
-          await salvarTokenNoFirestore(anonId, token);
-          console.log("👤 Token vinculado ao ID anônimo:", anonId);
-        }
-      } catch (dbError) {
-        console.error("❌ Falha ao salvar no Firestore:", dbError);
-      }
-    }
-    // Fechamento correto do bloco principal
-  } catch (err) {
-    console.error("Erro geral ao obter token FCM:", err);
-  }
-}*/
 // Escutar mensagens com o app aberto (Foreground)
 onMessage(messaging, (payload) => {
   console.log("Mensagem recebida (foreground):", payload);
@@ -443,10 +356,92 @@ function mostrarSecao(nomeSecao) {
       if (nomeSecao === "estudos") {
         atualizarModuloEstudos(); // <--- FORÇA O CÁLCULO AO ABRIR
       }
+      if (nomeSecao === "grimorio") {
+        console.log("📜 Grimório detectado, invocando saberes...");
+        carregarGrimorio();
+      }
     });
   }
 }
+// 2. CARREGAR E EXIBIR ITENS
+async function carregarGrimorio() {
+  const user = auth.currentUser;
+  const listaContainer = document.getElementById("lista-grimorio");
+  if (!user || !listaContainer) return;
 
+  try {
+    // Consulta ao Firestore
+    const q = query(
+      collection(db, "grimorio"),
+      where("uid", "==", user.uid),
+      orderBy("data_criacao", "desc"),
+    );
+
+    const querySnapshot = await getDocs(q);
+    listaContainer.innerHTML = "";
+
+    if (querySnapshot.empty) {
+      listaContainer.innerHTML = `
+            <p style="color: #888; text-align: center; margin-top: 20px;">
+                O Oráculo ainda não consagrou saberes para este perfil. 🏺
+            </p>`;
+      return;
+    }
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+
+      // Definição visual baseada na categoria
+      const éPedagogia = data.categoria === "Pedagogia";
+      const éCFO = data.categoria === "CFO";
+      const cor = éCFO ? "#ff4d4d" : éPedagogia ? "#2ecc71" : "#00d4ff";
+      const icone = éCFO ? "⚔️" : éPedagogia ? "🍎" : "⚙️";
+
+      // --- TRATAMENTO DE LINK (CORRIGIDO) ---
+      let linkOriginal = data.link_arquivo || "#";
+      let linkFinal = linkOriginal;
+
+      if (linkOriginal !== "#" && linkOriginal.includes("t.me/c/")) {
+        // Garante que o link seja absoluto para o navegador
+        linkFinal = linkOriginal.startsWith("http")
+          ? linkOriginal
+          : `https://${linkOriginal}`;
+      }
+
+      // Injeção do HTML
+      listaContainer.innerHTML += `
+    <div class="grimorio-item" style="border-left: 5px solid ${cor} !important; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <h4 style="margin:0; color: #fff; font-size: 1.1rem;">${icone} ${data.titulo || "Saber sem Título"}</h4>
+            <span class="grimorio-badge" style="border: 1px solid ${cor}; color: ${cor}; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;">${data.categoria}</span>
+        </div>
+
+        <div class="grimorio-resumo-box" style="margin: 10px 0; color: #bbb; font-size: 0.9rem;">
+            <p>${data.resumo_ia || "Sem resumo disponível."}</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <a href="${linkFinal}" target="_blank" rel="noopener noreferrer" class="action-btn" 
+               style="background: rgba(0,0,0,0.2); border: 1px solid ${cor}; color: ${cor}; flex: 1; text-decoration: none; text-align: center; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
+               📖 ACESSAR SABER
+            </a>
+            <button onclick="deletarGrimorio('${docSnap.id}')" 
+                    style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; border-radius: 6px; padding: 0 12px; cursor: pointer;">
+                🗑️
+            </button>
+        </div>
+    </div>
+    `;
+    });
+  } catch (e) {
+    console.error("Erro ao carregar Grimório:", e);
+    if (e.message.includes("index")) {
+      alert(
+        "⚠️ Erro de Índice: O Firebase precisa de um índice para ordenar por data. Verifique o console (F12) e clique no link gerado pelo Google.",
+      );
+    }
+  }
+}
 function irParaAgenda() {
   mostrarSecao("agenda");
 }
@@ -926,10 +921,7 @@ function atualizarDashboard() {
   // 4. HISTÓRICO FINANCEIRO (Home)
   renderizarHistorico();
 }
-// 2. CHAMA O HISTÓRICO PARA O NOVO LUGAR
-/* if (typeof renderizarHistorico === "function") {
-    renderizarHistorico();
-  }*/
+
 // ============================================================================
 // FUNÇÃO PARA CARREGAR TAREFAS NA HOME (Foco de Hoje)
 // ============================================================================
@@ -1061,7 +1053,7 @@ async function analisarFinancas() {
     alert("Configure sua API Key!");
     return mostrarSecao("config");
   }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -1277,7 +1269,208 @@ function atualizarHUDLevel() {
     barXp.style.width = `${pctXp}%`;
   }
 }
+// 2. Certifique-se que o adicionarAoGrimorio está com o link_arquivo ativo
+async function adicionarAoGrimorio() {
+  const user = auth.currentUser;
+  if (!user) return alert("⚠️ Identidade Requerida!");
 
+  const titulo = document.getElementById("grimorio-titulo").value;
+  const resumo = document.getElementById("grimorio-resumo").value;
+  const link = document.getElementById("grimorio-link-telegram").value;
+  const categoria = document.getElementById("grimorio-categoria").value;
+
+  if (!titulo || !link) return alert("📜 Preencha título e link!");
+
+  try {
+    await addDoc(collection(db, "grimorio"), {
+      uid: user.uid,
+      titulo: titulo,
+      resumo_ia: resumo || "Sem resumo disponível.",
+      link_arquivo: link, // <--- AQUI ESTAVA O SEU ERRO, AGORA ESTÁ ATIVO
+      categoria: categoria,
+      data_criacao: serverTimestamp(),
+    });
+
+    alert("✨ Conhecimento consagrado!");
+    // Limpeza de campos e reload
+    document.getElementById("grimorio-titulo").value = "";
+    document.getElementById("grimorio-resumo").value = "";
+    document.getElementById("grimorio-link-telegram").value = "";
+    carregarGrimorio();
+  } catch (e) {
+    console.error("Erro ao salvar:", e);
+    alert("Erro ao salvar no banco.");
+  }
+}
+async function iniciarConsagracaoFinal() {
+  console.clear();
+  console.log("⚡ INICIANDO PROTOCOLO DE CONSAGRAÇÃO...");
+
+  const fileInput = document.getElementById("input-arquivo-upload");
+  const btn = document.getElementById("btn-consagrar");
+  const tituloInput = document.getElementById("grimorio-titulo");
+  const resumoInput = document.getElementById("grimorio-resumo");
+  const linkInput = document.getElementById("grimorio-link-telegram");
+
+  const temArquivo = fileInput.files && fileInput.files.length > 0;
+  const temLink = linkInput.value && linkInput.value.trim().length > 0;
+
+  if (!temArquivo && !temLink) {
+    return alert(
+      "⚠️ O Oráculo exige uma oferenda: Faça Upload de um arquivo OU cole um Link!",
+    );
+  }
+
+  if (!tituloInput.value) return alert("⚠️ Dê um título ao saber!");
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳ Processando...";
+  }
+
+  try {
+    const API_KEY = localStorage.getItem("gemini_api_key");
+    const BOT_TOKEN = localStorage.getItem("chronos_telegram_token");
+    const CHAT_ID = localStorage.getItem("chronos_chat_id");
+
+    let resumoFinal = resumoInput.value;
+
+    if (temArquivo) {
+      const arquivo = fileInput.files[0];
+
+      if (
+        (!resumoFinal || resumoFinal === "Resuma" || resumoFinal.length < 50) &&
+        API_KEY
+      ) {
+        if (btn) btn.innerText = "🧠 O Oráculo está lendo...";
+
+        try {
+          const base64Data = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(arquivo);
+            reader.onload = () =>
+              resolve(reader.result.toString().replace(/^data:(.*,)?/, ""));
+          });
+
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: "Resuma esta imagem/documento em bullet points de forma didática.",
+                      },
+                      {
+                        inline_data: {
+                          mime_type: arquivo.type,
+                          data: base64Data,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              }),
+            },
+          );
+
+          const data = await response.json();
+          if (data.candidates && data.candidates[0].content) {
+            resumoFinal = data.candidates[0].content.parts[0].text;
+            resumoInput.value = resumoFinal;
+            console.log("✅ IA Respondeu com sucesso!");
+          }
+        } catch (errIA) {
+          console.error("🔥 FALHA NA IA:", errIA);
+          resumoFinal =
+            resumoFinal || `Arquivo: ${arquivo.name}. (Resumo falhou).`;
+        }
+      }
+
+      // TELEGRAM
+      if (BOT_TOKEN && CHAT_ID) {
+        if (btn) btn.innerText = "📤 Enviando Telegram...";
+        const formData = new FormData();
+        formData.append("chat_id", CHAT_ID.trim());
+
+        // CORREÇÃO DO ERRO 400: Limitar a legenda para não exceder o limite do Telegram
+        const legendaLimpa =
+          `📜 ${tituloInput.value}\n\n${resumoFinal || ""}`.substring(0, 1000);
+        formData.append("caption", legendaLimpa);
+        formData.append("document", arquivo);
+
+        const respTel = await fetch(
+          `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const dataTel = await respTel.json();
+        if (dataTel.ok) {
+          const msgId = dataTel.result.message_id;
+          const cleanChatId = CHAT_ID.trim()
+            .replace("-100", "")
+            .replace("-", "");
+          if (!temLink)
+            linkInput.value = `https://t.me/s/c/${cleanChatId}/${msgId}`;
+        } else {
+          console.error("❌ Erro Telegram:", dataTel.description);
+        }
+      }
+    } else {
+      console.log("🔗 Modo Link Direto.");
+      if (!resumoFinal || resumoFinal === "Resuma")
+        resumoFinal = "Link externo.";
+    }
+
+    // PASSO FINAL
+    if (btn) btn.innerText = "💾 Consagrando...";
+    resumoInput.value = resumoFinal;
+    await adicionarAoGrimorio();
+
+    alert("🎉 SUCESSO!");
+    fileInput.value = "";
+    tituloInput.value = "";
+    resumoInput.value = "";
+    linkInput.value = "";
+  } catch (error) {
+    alert("❌ ERRO: " + error.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "📤 Enviar e Consagrar (Arquivo)";
+    }
+  }
+}
+// GARANTIA DE FUNCIONAMENTO
+window.iniciarConsagracaoFinal = iniciarConsagracaoFinal;
+window.iniciarConsagracao = iniciarConsagracaoFinal;
+
+function salvarConfigTelegram() {
+  const tokenInput = document
+    .getElementById("config-telegram-token")
+    .value.trim();
+  const chatInput = document.getElementById("config-chat-id").value.trim();
+
+  if (tokenInput && chatInput) {
+    localStorage.setItem("chronos_telegram_token", tokenInput);
+    localStorage.setItem("chronos_chat_id", chatInput);
+    alert("✅ Chaves do Telegram salvas no dispositivo!");
+
+    // Limpa os campos visuais para segurança
+    document.getElementById("config-telegram-token").value = "";
+    document.getElementById("config-chat-id").value = "";
+  } else {
+    alert("⚠️ Preencha os dois campos!");
+  }
+}
+// Não esqueça de exportar para o HTML usar
+window.salvarConfigTelegram = salvarConfigTelegram;
 function atualizarCardHome() {
   let totalMetas = 0,
     totalFeito = 0;
@@ -1528,18 +1721,6 @@ function ativarSincronizacaoNuvem() {
       console.log("⚠️ [SISTEMA] Usuário deslogado.");
       window.auth = auth;
     }
-
-    // Bloqueia o botão se não houver login
-    /*if (btnConfirmar) {
-        btnConfirmar.disabled = true;
-        btnConfirmar.style.opacity = "0.5";
-        btnConfirmar.style.cursor = "not-allowed";
-      }
-
-      transacoes = []; // Limpa os dados por segurança
-      const saldoElemento = document.getElementById("saldo-carteira");
-      if (saldoElemento) saldoElemento.innerText = "R$ 0,00";
-    }*/
   });
 }
 
@@ -1653,6 +1834,54 @@ window.verificarAuth = () => {
   }
 };
 // ======================================================
+// ⚔️ FUNÇÃO: DELETAR GRIMÓRIO (VERSÃO DEFINITIVA)
+// ======================================================
+async function deletarGrimorio(id) {
+  // 1. Confirmação visual
+  if (!confirm("⚔️ Deseja realmente remover este saber do seu Grimório?"))
+    return;
+
+  try {
+    // 2. Verifica se o banco (db) existe
+    if (typeof db === "undefined")
+      throw new Error("Banco de dados não inicializado.");
+
+    // 3. Referência e Deleção
+    const docRef = doc(db, "grimorio", id);
+    await deleteDoc(docRef);
+
+    console.log("🗑️ Registro removido do Firebase:", id);
+
+    // 4. Feedback e Atualização
+    alert("Saber removido com sucesso!");
+    if (typeof carregarGrimorio === "function") {
+      carregarGrimorio();
+    } else {
+      window.location.reload(); // Fallback se a função de carregar sumir
+    }
+  } catch (e) {
+    console.error("❌ Erro ao deletar do Grimório:", e);
+    alert("O Oráculo não permitiu a exclusão: " + e.message);
+  }
+}
+
+// Expõe as funções para o HTML
+window.deletarGrimorio = deletarGrimorio;
+window.carregarGrimorio = carregarGrimorio;
+window.adicionarAoGrimorio = adicionarAoGrimorio;
+window.iniciarConsagracaoFinal = iniciarConsagracaoFinal;
+window.mostrarSecao = mostrarSecao; // Garante que a navegação também esteja visível
+
+// Inicializa o Grimório se a página for recarregada já nesta seção
+if (
+  document.getElementById("view-grimorio") &&
+  !document.getElementById("view-grimorio").classList.contains("hidden")
+) {
+  carregarGrimorio();
+}
+
+console.log("🛡️ SISTEMA: Todos os módulos do Grimório estão operacionais.");
+// ======================================================
 // 💰 FUNÇÃO DE SALVAR GASTOS (Mova isto para o script.js)
 // ======================================================
 async function salvarGasto() {
@@ -1716,9 +1945,6 @@ async function salvarGasto() {
   }
 }
 
-// Não esqueça de manter esta linha no final do script.js
-window.salvarGasto = salvarGasto;
-
 // TORNAR A FUNÇÃO PÚBLICA (Essencial para o botão do HTML funcionar)
 window.salvarGasto = salvarGasto;
 // Chame isso dentro da sua função mostrarSecao('estudos')
@@ -1762,7 +1988,5 @@ window.atualizarGraficoFinancas = atualizarGraficoFinancas;
 window.atualizarGraficoPizza = atualizarGraficoPizza;
 window.renderizarHistorico = renderizarHistorico;
 window.atualizarModuloEstudos = atualizarModuloEstudos;
-window.db = db; // Expondo o banco para o console (apenas para testes, cuidado com isso em produção)
-window.auth = auth; // Isso vai resolver o erro do console!
 ativarSincronizacaoNuvem();
 window.salvarGasto = salvarGasto;
