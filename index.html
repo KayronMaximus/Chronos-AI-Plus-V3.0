@@ -99,7 +99,7 @@
                         <canvas id="grafico-tarefas"></canvas>
                     </div>
                     <div style="text-align: right;">
-                        <h3 id="texto-progresso" style="font-size: 2rem; color: #00d4ff;">0%</h3>
+                        <h3 id="texto-progresso" style="font-size: 2.6rem; color: #bc13fe;">0%</h3>
                         <p style="color: #888; font-size: 0.8rem;">Concluído</p>
                     </div>
                 </div>
@@ -114,7 +114,7 @@
                     <h1 id="saldo-carteira" style="font-size: 2.5rem;">R$ 0,00</h1>
                 </div>
                 <button onclick="window.location.href='financeiro/index.html'"
-                    style="width: 100%; background: #00d4ff; color: #000; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    style="width: 100%; background: #be72db; color: #000; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
                     ➕ REGISTRAR GASTO
                 </button>
                 <div class="card" style="height: 180px;">
@@ -158,7 +158,7 @@
                         seus dados na nuvem.</p>
 
                     <button id="btn-login-google" onclick="login()" class="action-btn"
-                        style="background: #4285F4; display: none;">
+                        style="background: #cc65f5; display: none;">
                         Entrar com Google
                     </button>
 
@@ -175,9 +175,9 @@
                 </div>
                 <div class="card">
                     <h3>📅 Integração com Agenda</h3>
-                    <p style="color: #888; font-size: 0.75rem; margin-bottom: 15px;">Conecte sua conta para sincronizar
+                    <p style="color: #000000; font-size: 0.75rem; margin-bottom: 15px;">Conecte sua conta para sincronizar
                         missões.</p>
-                    <button class="action-btn" onclick="iniciarConexaoGoogle()" style="background: #4285F4;">Conectar
+                    <button class="action-btn" onclick="iniciarConexaoGoogle()" style="background: #cc65f5;">Conectar
                         Google Calendar</button>
                 </div>
                 <button onclick="logout()" class="action-btn" style="background: #ff4444; margin-top: 10px;">
@@ -189,11 +189,11 @@
                         Necessário para fazer upload de arquivos. Essas chaves ficam salvas apenas no seu dispositivo.
                     </p>
 
-                    <label style="color: #00d4ff; font-size: 0.8rem;">Bot Token:</label>
+                    <label style="color: #bc13fe; font-size: 0.8rem;">Bot Token:</label>
                     <input type="password" id="config-telegram-token" class="input-dark"
                         placeholder="Ex: 123456:ABC-Def..." style="margin-bottom: 10px;">
 
-                    <label style="color: #00d4ff; font-size: 0.8rem;">Chat ID:</label>
+                    <label style="color: #bc13fe; font-size: 0.8rem;">Chat ID:</label>
                     <input type="text" id="config-chat-id" class="input-dark" placeholder="Ex: -100517..."
                         style="margin-bottom: 10px;">
 
@@ -202,68 +202,80 @@
                     </button>
                 </div>
             </section>
-            <section id="view-estudos" class="view hidden">
-                <h2>🎓 Central Acadêmica</h2>
+            <section id="view-foco" class="view hidden">
+                <h2 class="titulo-central">CENTRAL DE FOCO</h2>
 
-                <div class="card" style="background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);">
-                    <h3 style="color:white; text-align:center;">CFO MARANHÃO</h3>
-                    <div id="countdown-cfo"
-                        style="font-size: 2rem; font-weight: bold; text-align: center; margin: 10px 0;">
-                        00d 00h 00m
+                <div class="foco-core-container">
+                    <div class="foco-core-ring">
+                        <span id="streak-global-grande">0</span>
                     </div>
-                    <p style="text-align: center; font-size: 0.8rem; color: #eee;">Até a prova</p>
+                    <p class="foco-label">DIAS EM FOCO</p>
                 </div>
 
-                <div class="card">
-                    <h3>📊 Status das Matérias</h3>
+                <div class="habitos-lista-scroll" id="lista-habitos-neurais">
+                </div>
 
-                    <div class="materia-item">
-                        <div class="materia-info">
-                            <span>⚖️ Direito / Legislação</span>
-                            <span id="prog-direito-txt">0%</span>
-                        </div>
-                        <div class="progress-track">
-                            <div id="prog-direito-bar" class="progress-fill" style="background: #ff4d4d;"></div>
-                        </div>
+                <div class="chart-container-foco">
+                    <canvas id="grafico-performance-neural"></canvas>
+                </div>
+
+                <button class="btn-adicionar-habito" onclick="abrirModalNovoHabito()">+ Adicionar Novo Hábito</button>
+
+                <div class="card maestria-container">
+                    <h3 class="neural-title">📚 Maestria em Matérias</h3>
+                    <div id="countdown-container"
+                        style="text-align:center; margin-bottom:15px; color:#b026fa; font-weight:bold;">
+                        PROVA CFO EM: <span id="countdown-cfo-foco">--d --h</span>
                     </div>
+                    <div class="grid-estudos" id="grid-materias-foco">
+                        <div class="progresso-item">
+                            <div class="materia-info">
+                                <small>⚖️ Direito / Legislação</small>
+                                <span id="prog-direito-txt">0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div id="prog-direito-bar" class="bar-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
 
-                    <div class="materia-item">
-                        <div class="materia-info">
-                            <span>💻 Informática (SQL/Python)</span>
-                            <span id="prog-ti-txt">0%</span>
+                        <div class="progresso-item">
+                            <div class="materia-info">
+                                <small>💻 Informática e Linguagens</small>
+                                <span id="prog-ti-txt">0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div id="prog-ti-bar" class="bar-fill" style="width: 0%;"></div>
+                            </div>
                         </div>
-                        <div class="progress-track">
-                            <div id="prog-ti-bar" class="progress-fill" style="background: #00d4ff;"></div>
-                        </div>
-                    </div>
 
-                    <div class="materia-item">
-                        <div class="materia-info">
-                            <span>📚 Português / Redação</span>
-                            <span id="prog-port-txt">0%</span>
+                        <div class="progresso-item">
+                            <div class="materia-info">
+                                <small>✍️ Português / Redação</small>
+                                <span id="prog-port-txt">0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div id="prog-port-bar" class="bar-fill" style="width: 0%;"></div>
+                            </div>
                         </div>
-                        <div class="progress-track">
-                            <div id="prog-port-bar" class="progress-fill" style="background: #2ecc71;"></div>
-                        </div>
-                    </div>
 
-                    <div class="materia-item">
-                        <div class="materia-info">
-                            <span>🧮 Matemática / RLM</span>
-                            <span id="prog-mat-txt">0%</span>
+                        <div class="progresso-item">
+                            <div class="materia-info">
+                                <small>📐 Matemática / RLM</small>
+                                <span id="prog-mat-txt">0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div id="prog-mat-bar" class="bar-fill" style="width: 0%;"></div>
+                            </div>
                         </div>
-                        <div class="progress-track">
-                            <div id="prog-mat-bar" class="progress-fill" style="background: #f1c40f;"></div>
-                        </div>
-                    </div>
 
-                    <div class="materia-item">
-                        <div class="materia-info">
-                            <span>🚩 Hist./Geo. Maranhão</span>
-                            <span id="prog-ma-txt">0%</span>
-                        </div>
-                        <div class="progress-track">
-                            <div id="prog-ma-bar" class="progress-fill" style="background: #9b59b6;"></div>
+                        <div class="progresso-item">
+                            <div class="materia-info">
+                                <small>🌴 Hist./Geo. Maranhão</small>
+                                <span id="prog-ma-txt">0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div id="prog-ma-bar" class="bar-fill" style="width: 0%;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -324,12 +336,12 @@
                 </svg>
                 <span>Agenda</span>
             </button>
-            <button class="nav-btn" onclick="mostrarSecao('estudos')">
+            <button class="nav-btn" onclick="mostrarSecao('foco')">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                <span>Estudos</span>
+                <span>Foco</span>
             </button>
             <button class="nav-btn home-btn" onclick="mostrarSecao('home')">
                 <div class="neon-reactor">

@@ -293,6 +293,53 @@ function getNomeUsuario() {
   return localStorage.getItem("chronos_user_name") || "Chronos";
 }
 
+let habitosCFO = JSON.parse(localStorage.getItem("chronos_habitos_v3")) || [
+  { id: "h1", nome: "Beber 3L d'água", icone: "💧" },
+  { id: "h2", nome: "Ler 5 Páginas de um Volume", icone: "📖" },
+  { id: "h3", nome: "Escrever uma Lauda", icone: "✍️" },
+  { id: "h4", nome: "Cumprir o Daily Quest", icone: "⚔️" },
+];
+
+let registroHabitos =
+  JSON.parse(localStorage.getItem("chronos_registro_habitos")) || {};
+
+let estadoQuest = {
+  pushup: 0,
+  situp: 0,
+  squat: 0,
+  run: 0,
+  data: "",
+  level: 1,
+  currentXp: 0,
+  nextLevelXp: 100,
+};
+
+function carregarSistema() {
+  const salvo = JSON.parse(localStorage.getItem("chronos_quest_rpg"));
+  const hoje = new Date().toDateString();
+
+  if (salvo) {
+    if (salvo.data !== hoje) {
+      estadoQuest = {
+        ...salvo,
+        pushup: 0,
+        situp: 0,
+        squat: 0,
+        run: 0,
+        data: hoje,
+      };
+    } else {
+      estadoQuest = salvo;
+    }
+  } else {
+    estadoQuest.data = hoje;
+  }
+  salvarEstado();
+  renderizarJanelaSistema();
+  atualizarCardHome();
+  atualizarHUDLevel();
+}
+
 // Inicialização do App
 document.addEventListener("DOMContentLoaded", () => {
   sincronizarNomeSplash();
@@ -304,6 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // INICIA O SISTEMA RPG
   carregarSistema();
+  renderizarHabitos();
 
   mostrarSecao("home");
 
@@ -336,6 +384,168 @@ function carregarData() {
   if (dataHome) dataHome.innerText = hoje.toLocaleDateString("pt-BR", opcoes);
 }
 
+function calcularDiasTotaisHabito(id) {
+  let total = 0;
+  // Percorre todos os dias registrados no seu histórico
+  Object.values(registroHabitos).forEach((listaIds) => {
+    if (listaIds.includes(id)) total++;
+  });
+  return total;
+}
+
+function renderizarHabitos() {
+  const container = document.getElementById("lista-habitos-neurais");
+  const hoje = new Date().toLocaleDateString("pt-BR");
+  if (!container) return;
+
+  container.innerHTML = ""; // Limpeza essencial
+
+  habitosCFO.forEach((habito) => {
+    const concluidoHoje =
+      registroHabitos[hoje] && registroHabitos[hoje].includes(habito.id);
+    const totalDias = calcularDiasTotaisHabito(habito.id);
+
+    const div = document.createElement("div");
+    div.className = `habito-item-v4 ${concluidoHoje ? "concluido" : ""}`;
+
+    // A MÁGICA: O clique agora é na DIV inteira
+    div.onclick = () => toggleHabito(habito.id);
+
+    div.innerHTML = `
+            <div class="habito-info-meta">
+                <span style="font-size: 1.5rem;">${habito.icone}</span>
+                <strong style="margin-left: 10px;">${habito.nome}</strong>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <span class="habito-count">${totalDias}d</span>
+                <div class="check-circular-foco">${concluidoHoje ? "✓" : ""}</div>
+            </div>
+        `;
+    container.appendChild(div); // Usando appendChild corretamente
+  });
+
+  // Atualiza o Número Grande no Círculo Central
+  const streakGlobal = localStorage.getItem("chronos_streak_neurais") || 0;
+  const displayGrande = document.getElementById("streak-global-grande");
+  if (displayGrande) displayGrande.innerText = streakGlobal;
+
+  // Atualiza o Gráfico de Linhas sempre que algo muda
+  inicializarGraficoFoco();
+}
+window.renderizarHabitos = renderizarHabitos;
+
+// Função para abrir o modal de novo hábito
+function abrirModalNovoHabito() {
+  // Você pode criar um modal real em HTML, mas para testar agora use o prompt:
+  const nome = prompt("Qual o nome do novo hábito neural?");
+  const icone = prompt("Escolha um emoji para o ícone:");
+
+  if (nome && icone) {
+    const novoId = "h" + Date.now();
+    habitosCFO.push({ id: novoId, nome: nome, icone: icone });
+    localStorage.setItem("chronos_habitos_v3", JSON.stringify(habitosCFO));
+    renderizarHabitos();
+  }
+}
+// ESSENCIAL: Exponha para o navegador encontrar o clique
+window.abrirModalNovoHabito = abrirModalNovoHabito;
+
+function toggleHabito(id) {
+  const hoje = new Date().toLocaleDateString("pt-BR");
+  if (!registroHabitos[hoje]) registroHabitos[hoje] = [];
+
+  const index = registroHabitos[hoje].indexOf(id);
+  if (index === -1) {
+    registroHabitos[hoje].push(id);
+    if (navigator.vibrate) navigator.vibrate(50);
+  } else {
+    registroHabitos[hoje].splice(index, 1);
+  }
+
+  localStorage.setItem(
+    "chronos_registro_habitos",
+    JSON.stringify(registroHabitos),
+  );
+  calcularStreak();
+  renderizarHabitos();
+  inicializarGraficoFoco();
+}
+window.toggleHabito = toggleHabito;
+
+function calcularStreak() {
+  let streak = 0;
+  let dataParaVerificar = new Date();
+
+  while (true) {
+    const dataStr = dataParaVerificar.toLocaleDateString("pt-BR");
+    // Se todos os 4 hábitos foram feitos no dia
+    if (registroHabitos[dataStr] && registroHabitos[dataStr].length === 4) {
+      streak++;
+      dataParaVerificar.setDate(dataParaVerificar.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  localStorage.setItem("chronos_streak_neurais", streak);
+  atualizarStreakVisual();
+}
+
+function atualizarStreakVisual() {
+  const countEl = document.getElementById("streak-count");
+  const streak = localStorage.getItem("chronos_streak_neurais") || 0;
+  if (countEl) countEl.innerText = streak;
+}
+
+function inicializarGraficoFoco() {
+  const canvas = document.getElementById("grafico-performance-neural");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  // Dados para o gráfico
+  const labels = habitosCFO.map((h) => h.icone);
+  const dados = habitosCFO.map((h) => calcularDiasTotaisHabito(h.id));
+
+  // Destruir gráfico anterior para evitar sobreposição
+  if (window.meuGraficoFoco) window.meuGraficoFoco.destroy();
+
+  window.meuGraficoFoco = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Dias de Consistência",
+          data: dados,
+          borderColor: "#8a2be2", // Roxo Neon
+          backgroundColor: "rgba(138, 43, 226, 0.2)",
+          borderWidth: 3,
+          tension: 0.4, // Curva suave na linha
+          fill: true,
+          pointBackgroundColor: "#fff",
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(255,255,255,0.05)" },
+          ticks: { color: "#888" },
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: "#fff", font: { size: 14 } },
+        },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+// Chame renderizarHabitos() dentro do seu DOMContentLoaded ou mostrarSecao('foco')
 // ============================================================================
 // 3. SISTEMA DE NAVEGAÇÃO
 // ============================================================================
@@ -360,8 +570,11 @@ function mostrarSecao(nomeSecao) {
       if (acaoBotao && acaoBotao.includes(`'${nomeSecao}'`)) {
         btn.classList.add("active");
       }
-      if (nomeSecao === "estudos") {
-        atualizarModuloEstudos(); // <--- FORÇA O CÁLCULO AO ABRIR
+      if (nomeSecao === "foco") {
+        console.log("🎯 Central de Foco ativada.");
+        renderizarHabitos(); // Carrega os 4 hábitos neurais
+        atualizarModuloEstudos(); // Atualiza as barras de Direito, TI, etc.
+        atualizarStreakVisual(); // Acende a chama
       }
       if (nomeSecao === "grimorio") {
         console.log("📜 Grimório detectado, invocando saberes...");
@@ -401,7 +614,7 @@ async function carregarGrimorio() {
       // Definição visual baseada na categoria
       const éPedagogia = data.categoria === "Pedagogia";
       const éCFO = data.categoria === "CFO";
-      const cor = éCFO ? "#ff4d4d" : éPedagogia ? "#2ecc71" : "#00d4ff";
+      const cor = éCFO ? "#ff4d4d" : éPedagogia ? "#2ecc71" : "#bc13fe";
       const icone = éCFO ? "⚔️" : éPedagogia ? "🍎" : "⚙️";
 
       // --- TRATAMENTO DE LINK (CORRIGIDO) ---
@@ -915,11 +1128,11 @@ function atualizarDashboard() {
     // Exibe as 3 primeiras tarefas pendentes
     pendentes.slice(0, 3).forEach((t) => {
       listaTarefasHome.innerHTML += `
-        <div style='margin: 8px 0; padding: 12px; background: rgba(0, 212, 255, 0.1); border-left: 4px solid #00d4ff; border-radius: 6px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;'>
+        <div style='margin: 8px 0; padding: 12px; background: rgba(188, 19, 254, 0.1); border-left: 4px solid #bc13fe; border-radius: 6px; font-size: 10px; display: flex; align-items: center; gap: 10px;'>
             <span style="font-size: 1.2rem;">🎯</span>
             <div>
                 <strong style="color: #fff;">${t.titulo}</strong><br>
-                <small style="color: #00d4ff; font-size: 0.75rem;">${t.categoria}</small>
+                <small style="color: #bc13fe; font-size: 0.75rem;">${t.categoria}</small>
             </div>
         </div>`;
     });
@@ -1149,43 +1362,6 @@ const EXERCICIOS_CONFIG = {
   run: { nome: "Corrida (Km)", meta: 3, botoes: [0.5, 1], xp: 50 },
 };
 
-let estadoQuest = {
-  pushup: 0,
-  situp: 0,
-  squat: 0,
-  run: 0,
-  data: "",
-  level: 1,
-  currentXp: 0,
-  nextLevelXp: 100,
-};
-
-function carregarSistema() {
-  const salvo = JSON.parse(localStorage.getItem("chronos_quest_rpg"));
-  const hoje = new Date().toDateString();
-
-  if (salvo) {
-    if (salvo.data !== hoje) {
-      estadoQuest = {
-        ...salvo,
-        pushup: 0,
-        situp: 0,
-        squat: 0,
-        run: 0,
-        data: hoje,
-      };
-    } else {
-      estadoQuest = salvo;
-    }
-  } else {
-    estadoQuest.data = hoje;
-  }
-  salvarEstado();
-  renderizarJanelaSistema();
-  atualizarCardHome();
-  atualizarHUDLevel();
-}
-
 function salvarEstado() {
   localStorage.setItem("chronos_quest_rpg", JSON.stringify(estadoQuest));
 }
@@ -1201,8 +1377,8 @@ function renderizarJanelaSistema() {
     const config = EXERCICIOS_CONFIG[chave];
     const atual = estadoQuest[chave];
     const pct = Math.min((atual / config.meta) * 100, 100);
-    const corTexto = atual >= config.meta ? "#00ff88" : "#00d4ff";
-    const corBarra = atual >= config.meta ? "#00ff88" : "#00d4ff";
+    const corTexto = atual >= config.meta ? "#00ff88" : "#bc13fe";
+    const corBarra = atual >= config.meta ? "#00ff88" : "#bc13fe";
 
     let htmlBotoes = "";
     config.botoes.forEach((valor) => {
@@ -1542,7 +1718,7 @@ function atualizarGraficoTarefas() {
       datasets: [
         {
           data: [feitas, total > 0 ? total - feitas : 1],
-          backgroundColor: ["#00d4ff", "#1a1a1a"],
+          backgroundColor: ["#bc13fe", "#1a1a1a"],
           borderWidth: 0,
         },
       ],
@@ -1614,11 +1790,11 @@ function atualizarGraficoPizza() {
         {
           data: Object.values(categorias),
           backgroundColor: [
-            "#00d4ff",
-            "#9b59b6",
-            "#ff5555",
-            "#2ecc71",
-            "#f1c40f",
+            "#62c8ff",
+            "#d56aff",
+            "#ff6767",
+            "#57ff9d",
+            "#ffe168",
           ],
           borderWidth: 2,
           borderColor: "#0d1117",
@@ -1776,26 +1952,26 @@ function renderizarHistorico() {
   });
 }
 function atualizarModuloEstudos() {
-  // 1. Countdown CFO (Garante que os números apareçam)
-  const dataProva = new Date("2026-08-20T09:00:00");
+  // 1. Countdown CFO Maranhão
+  const dataProva = new Date("2026-08-20T09:00:00"); // Ajuste a data se necessário
   const agora = new Date();
   const diff = dataProva - agora;
 
-  if (diff > 0) {
+  const countdownEl = document.getElementById("countdown-cfo-foco");
+  if (diff > 0 && countdownEl) {
     const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
     const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    document.getElementById("countdown-cfo").innerText = `${dias}d ${horas}h`;
+    countdownEl.innerText = `${dias}d ${horas}h`;
   }
 
-  // 2. Cálculo de Progresso Real
-  // Filtramos apenas missões da categoria 'Estudo'
-  const missoes = tarefas.filter(
-    (t) => t.categoria === "Estudo" || t.categoria === "Educação",
-  );
+  // 2. Cálculo de Progresso por Matéria
+  const missoes = JSON.parse(localStorage.getItem("chronos_tarefas")) || [];
 
-  const calcular = (termos) => {
-    const filtradas = missoes.filter((t) =>
-      termos.some((termo) => t.titulo.toLowerCase().includes(termo)),
+  const calcularProgresso = (termos) => {
+    const filtradas = missoes.filter(
+      (t) =>
+        termos.some((termo) => t.titulo.toLowerCase().includes(termo)) ||
+        termos.some((termo) => t.categoria.toLowerCase().includes(termo)),
     );
     const concluidas = filtradas.filter((t) => t.feita).length;
     return filtradas.length > 0
@@ -1803,48 +1979,68 @@ function atualizarModuloEstudos() {
       : 0;
   };
 
-  // Mapeamento de Palavras-Chave
-  const configuracao = [
-    { id: "direito", termos: ["direito", "lei", "constitucional", "penal"] },
-    { id: "ti", termos: ["sql", "python", "informática", "ti"] },
-    { id: "port", termos: ["português", "gramática", "redação"] },
-    { id: "mat", termos: ["matemática", "rlm", "lógica"] },
-    { id: "ma", termos: ["maranhão", "história", "geografia"] },
+  // Configuração das matérias baseada no seu pedido
+  const configuracaoMaterias = [
+    {
+      id: "direito",
+      termos: [
+        "direito",
+        "lei",
+        "legislação",
+        "constitucional",
+        "penal",
+        "administrativo",
+      ],
+    },
+    {
+      id: "ti",
+      termos: [
+        "informática",
+        "linguagem",
+        "python",
+        "sql",
+        "computador",
+        "rede",
+      ],
+    },
+    {
+      id: "port",
+      termos: ["português", "redação", "gramática", "interpretação", "texto"],
+    },
+    {
+      id: "mat",
+      termos: ["matemática", "rlm", "lógica", "raciocínio", "cálculo"],
+    },
+    {
+      id: "ma",
+      termos: [
+        "maranhão",
+        "história ma",
+        "geografia ma",
+        "uema",
+        "história do maranhão",
+      ],
+    },
   ];
 
-  configuracao.forEach((m) => {
-    const pct = calcular(m.termos);
+  configuracaoMaterias.forEach((m) => {
+    const pct = calcularProgresso(m.termos);
     const bar = document.getElementById(`prog-${m.id}-bar`);
     const txt = document.getElementById(`prog-${m.id}-txt`);
+
     if (bar) bar.style.width = pct + "%";
+    if (txt) txt.innerText = pct + "%";
+    if (bar) {
+      bar.style.width = pct + "%";
+      // Adiciona o atributo para o CSS do degradê roxo
+      bar.parentElement.parentElement.setAttribute(
+        "data-completo",
+        pct === 100 ? "true" : "false",
+      );
+    }
     if (txt) txt.innerText = pct + "%";
   });
 }
-function logout() {
-  auth
-    .signOut()
-    .then(() => {
-      console.log("Logout realizado");
-      alert("Você saiu da conta.");
-      window.location.reload();
-    })
-    .catch((err) => {
-      console.error("Erro no logout:", err);
-      alert("Erro ao sair: " + err.message);
-    });
-}
-window.verificarAuth = () => {
-  if (auth.currentUser) {
-    console.log(
-      "Usuário logado:",
-      auth.currentUser.uid,
-      auth.currentUser.email,
-      auth.currentUser.displayName,
-    );
-  } else {
-    console.log("Nenhum usuário logado (auth.currentUser é null)");
-  }
-};
 // ======================================================
 // ⚔️ FUNÇÃO: DELETAR GRIMÓRIO (VERSÃO DEFINITIVA)
 // ======================================================
@@ -1959,7 +2155,6 @@ async function salvarGasto() {
 
 // TORNAR A FUNÇÃO PÚBLICA (Essencial para o botão do HTML funcionar)
 window.salvarGasto = salvarGasto;
-// Chame isso dentro da sua função mostrarSecao('estudos')
 // EXPORTAÇÕES PARA O HTML
 window.abrirModal = abrirModal;
 window.fecharModal = fecharModal;
