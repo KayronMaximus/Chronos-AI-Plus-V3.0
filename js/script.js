@@ -479,7 +479,10 @@ function calcularStreak() {
   while (true) {
     const dataStr = dataParaVerificar.toLocaleDateString("pt-BR");
     // Se todos os 4 hábitos foram feitos no dia
-    if (registroHabitos[dataStr] && registroHabitos[dataStr].length === metaDiaria) {
+    if (
+      registroHabitos[dataStr] &&
+      registroHabitos[dataStr].length === metaDiaria
+    ) {
       streak++;
       dataParaVerificar.setDate(dataParaVerificar.getDate() - 1);
     } else {
@@ -489,12 +492,12 @@ function calcularStreak() {
 
   localStorage.setItem("chronos_streak_neurais", streak);
   if (typeof atualizarStreakVisual === "function") {
-        atualizarStreakVisual(); 
-    } else {
-        // Caso a função tenha mudado de nome, garantimos a atualização do DOM aqui mesmo
-        const displayGrande = document.getElementById("streak-global-grande");
-        if (displayGrande) displayGrande.innerText = streak;
-}
+    atualizarStreakVisual();
+  } else {
+    // Caso a função tenha mudado de nome, garantimos a atualização do DOM aqui mesmo
+    const displayGrande = document.getElementById("streak-global-grande");
+    if (displayGrande) displayGrande.innerText = streak;
+  }
 }
 
 function atualizarStreakVisual() {
@@ -1362,8 +1365,8 @@ async function configurarZeusVigilia() {
 // ============================================================================
 
 const EXERCICIOS_CONFIG = {
-  pushup: { nome: "Flexões", meta: 20, botoes: [1, 5, 10], xp: 2 },
-  situp: { nome: "Abdominais", meta: 20, botoes: [1, 5, 10], xp: 2 },
+  pushup: { nome: "Flexões", meta: 20, botoes: [1, 5, 10], xp: 5 },
+  situp: { nome: "Abdominais", meta: 20, botoes: [1, 5, 10], xp: 4 },
   squat: { nome: "Agachamentos", meta: 20, botoes: [1, 5, 10], xp: 2 },
   run: { nome: "Corrida (Km)", meta: 3, botoes: [0.5, 1], xp: 50 },
 };
@@ -1376,44 +1379,69 @@ function renderizarJanelaSistema() {
   atualizarHUDLevel();
   const container = document.getElementById("lista-exercicios");
   if (!container) return;
+
   container.innerHTML = "";
   const icones = { pushup: "💪", situp: "🍫", squat: "🏋️", run: "🏃" };
 
   for (let chave in EXERCICIOS_CONFIG) {
     const config = EXERCICIOS_CONFIG[chave];
-    const atual = estadoQuest[chave];
-    const pct = Math.min((atual / config.meta) * 100, 100);
-    const corTexto = atual >= config.meta ? "#00ff88" : "#bc13fe";
-    const corBarra = atual >= config.meta ? "#00ff88" : "#bc13fe";
+    // Garante que o valor atual seja um número, ou 0 se indefinido
+    const atual = Number(estadoQuest[chave]) || 0;
 
+    // A barra visual trava em 100%, mas o número (atual) continua subindo
+    const pct = Math.min((atual / config.meta) * 100, 100);
+
+    // Se passou da meta, fica verde (#00ff88), senão, roxo (#bc13fe)
+    const atingiuMeta = atual >= config.meta;
+    const corTexto = atingiuMeta ? "#00ff88" : "#bc13fe";
+    const corBarra = atingiuMeta ? "#00ff88" : "#bc13fe";
+
+    // Gera os botões dinamicamente
     let htmlBotoes = "";
     config.botoes.forEach((valor) => {
+      // Passamos o valor como número para a função
       htmlBotoes += `<button class="btn-add" onclick="realizarAcao('${chave}', ${valor})">+${valor}</button>`;
     });
 
     const htmlItem = `
-            <div class="ex-item">
-                <div class="ex-header">
-                    <span class="ex-name">${icones[chave]} ${config.nome}</span>
-                    <span class="ex-count" style="color:${corTexto}">${atual} <span style="font-size:0.8em; color:#555;">/ ${config.meta}</span></span>
-                </div>
-                <div class="mini-track"><div class="mini-fill" style="width: ${pct}%; background: ${corBarra}; box-shadow: 0 0 10px ${corBarra};"></div></div>
-                <div class="ex-controls">${htmlBotoes}</div>
-            </div>`;
+      <div class="ex-item">
+          <div class="ex-header">
+              <span class="ex-name">${icones[chave]} ${config.nome}</span>
+              <span class="ex-count" style="color:${corTexto}">
+                  ${atual} <span style="font-size:0.8em; color:#555;">/ ${config.meta}</span>
+              </span>
+          </div>
+          
+          <div class="mini-track">
+              <div class="mini-fill" style="width: ${pct}%; background: ${corBarra}; box-shadow: 0 0 10px ${corBarra};"></div>
+          </div>
+          
+          <div class="ex-controls">${htmlBotoes}</div>
+      </div>`;
+
     container.innerHTML += htmlItem;
   }
 }
 
 function realizarAcao(tipo, qtd) {
-  if (estadoQuest[tipo] < EXERCICIOS_CONFIG[tipo].meta) {
-    estadoQuest[tipo] += qtd;
-    const xpGanho = qtd * EXERCICIOS_CONFIG[tipo].xp;
-    ganharXp(xpGanho);
-    if (navigator.vibrate) navigator.vibrate(30);
-    salvarEstado();
-    renderizarJanelaSistema();
-    atualizarCardHome();
-  }
+  // REMOVIDA A TRAVA DE LIMITE: Agora você pode treinar até a falha!
+  // if (estadoQuest[tipo] < EXERCICIOS_CONFIG[tipo].meta) { <--- ESTA LINHA FOI REMOVIDA
+
+  // Garante inicialização
+  if (typeof estadoQuest[tipo] === "undefined") estadoQuest[tipo] = 0;
+
+  estadoQuest[tipo] += qtd;
+
+  // Cálculo de XP baseado na dificuldade do exercício
+  const xpGanho = qtd * EXERCICIOS_CONFIG[tipo].xp;
+
+  ganharXp(xpGanho);
+
+  if (navigator.vibrate) navigator.vibrate(30);
+
+  salvarEstado();
+  renderizarJanelaSistema();
+  atualizarCardHome();
 }
 
 function ganharXp(quantidade) {
