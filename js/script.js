@@ -475,11 +475,11 @@ window.toggleHabito = toggleHabito;
 function calcularStreak() {
   let streak = 0;
   let dataParaVerificar = new Date();
-
+  const metaDiaria = habitosCFO.length;
   while (true) {
     const dataStr = dataParaVerificar.toLocaleDateString("pt-BR");
     // Se todos os 4 hábitos foram feitos no dia
-    if (registroHabitos[dataStr] && registroHabitos[dataStr].length === 4) {
+    if (registroHabitos[dataStr] && registroHabitos[dataStr].length === metaDiaria) {
       streak++;
       dataParaVerificar.setDate(dataParaVerificar.getDate() - 1);
     } else {
@@ -488,7 +488,13 @@ function calcularStreak() {
   }
 
   localStorage.setItem("chronos_streak_neurais", streak);
-  atualizarStreakVisual();
+  if (typeof atualizarStreakVisual === "function") {
+        atualizarStreakVisual(); 
+    } else {
+        // Caso a função tenha mudado de nome, garantimos a atualização do DOM aqui mesmo
+        const displayGrande = document.getElementById("streak-global-grande");
+        if (displayGrande) displayGrande.innerText = streak;
+}
 }
 
 function atualizarStreakVisual() {
