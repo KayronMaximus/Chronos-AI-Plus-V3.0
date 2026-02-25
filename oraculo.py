@@ -16,7 +16,7 @@ if not API_KEY:
     print("❌ Erro: GEMINI_API_KEY não encontrada.")
     exit()
 
-# 2. Configuração do Cliente Gemini (Apenas UMA vez)
+# 2. Configuração do Cliente Gemini
 client = genai.Client(api_key=API_KEY)
 
 # 3. Inicialização do Firebase
@@ -42,7 +42,6 @@ except Exception as e:
 # --- FUNÇÕES DE APOIO ---
 
 def enviar_telegram(mensagem):
-    """Envia uma notificação em tempo real via Telegram."""
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     
@@ -71,12 +70,12 @@ def buscar_cfo_com_ia():
         soup = BeautifulSoup(r.text, 'html.parser')
         texto_pagina = soup.get_text()
 
-        prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO. Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:1500]}"
+        prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO. Texto: {texto_pagina[:1000]}"
         
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt_ia)
+        # MUDANÇA AQUI: Trocamos para o modelo 1.5-flash-8b para economizar cota
+        response = client.models.generate_content(model="gemini-1.5-flash-8b", contents=prompt_ia)
         analise = response.text.strip()
 
-        # Salva no Firestore
         db.collection('inteligencia').document('cfo_status').set({
             'ultima_noticia': analise,
             'status': 'monitorando',
@@ -85,7 +84,6 @@ def buscar_cfo_com_ia():
         
         print(f"✅ UEMA: {analise}")
         
-        # Opcional: Avisar no Telegram se houver novidade real
         if "Sem novidades" not in analise:
              enviar_telegram(f"🔔 *NOVIDADE UEMA:* {analise}")
 
@@ -103,12 +101,12 @@ def monitorar_flamengo():
         texto_noticias = soup.get_text()
         
         prompt_fla = (
-            "Com base no texto, identifique o PRÓXIMO JOGO do Flamengo. "
-            "Informe: Adversário, Data, Horário e Campeonato. "
-            f"Texto: {texto_noticias[:1500]}"
+            "Identifique o PRÓXIMO JOGO do Flamengo: Adversário, Data e Horário. "
+            f"Texto: {texto_noticias[:1000]}"
         )
         
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt_fla)
+        # MUDANÇA AQUI: Trocamos para o modelo 1.5-flash-8b para economizar cota
+        response = client.models.generate_content(model="gemini-1.5-flash-8b", contents=prompt_fla)
         info_jogo = response.text.strip()
         
         enviar_telegram(f"🔴⚫ *RADAR DO MENGÃO* 🔴⚫\n\n{info_jogo}")
@@ -122,10 +120,7 @@ def gerar_relatorio_financeiro():
     try:
         gastos_ref = db.collection("financas").stream()
         total = sum(gasto.to_dict().get("valor", 0) for gasto in gastos_ref)
-        
         print(f"💰 Total gasto: R$ {total:.2f}")
-        if total > 100:
-            print("⚠️ Alerta: Gastos elevados!")
     except Exception as e:
         print(f"❌ Erro nas finanças: {e}")
 
@@ -133,7 +128,10 @@ def gerar_relatorio_financeiro():
 
 if __name__ == "__main__":
     buscar_cfo_com_ia()
-    print("⏳ Aguardando 15s para não estourar a cota...")
-    time.sleep(15) 
+    
+    # MUDANÇA AQUI: Aumentamos o tempo para 60 segundos para resetar a cota entre chamadas
+    print("⏳ Aguardando 60s para resetar a cota da API...")
+    time.sleep(60) 
+    
     monitorar_flamengo()
     gerar_relatorio_financeiro()
