@@ -5,23 +5,20 @@ from bs4 import BeautifulSoup
 import os
 import json
 from dotenv import load_dotenv
-from google import genai
+from google import genai  # Importação da biblioteca nova
 
-# 1. Carregar variáveis de ambiente (Local)
+# 1. Carregar variáveis de ambiente
 load_dotenv()
 
-# 2. Configuração do Gemini (Versão 2.0 Flash)
-#client = genai.Client(api_key=API_KEY) if API_KEY else None
-
 API_KEY = os.getenv("GEMINI_API_KEY")
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-else:
+if not API_KEY:
     print("❌ Erro: GEMINI_API_KEY não encontrada.")
     exit()
 
+# 2. Configuração do Novo Cliente Gemini (O padrão correto agora)
+client = genai.Client(api_key=API_KEY)
+
 # 3. Inicialização Inteligente do Firebase
-# Tenta ler do GitHub Secrets primeiro, se não houver, usa o caminho local
 firebase_env = os.getenv("FIREBASE_CREDENTIALS")
 
 try:
@@ -34,13 +31,13 @@ try:
         caminho_local = r"C:\Users\Samsung\Projetos\ai-plus-defce-firebase-adminsdk-fbsvc-b58bfb19c9.json"
         cred = credentials.Certificate(caminho_local)
     
-    firebase_admin.initialize_app(cred)
+    # Evita erro se o app já estiver inicializado
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
     print(f"❌ Falha crítica no Firebase: {e}")
     exit()
-
-# ... (suas importações e código de inicialização do Firebase continuam iguais)
 
 # Configuração do Novo Cliente Gemini
 # O client deve ser criado usando a API_KEY que você pegou do ambiente
