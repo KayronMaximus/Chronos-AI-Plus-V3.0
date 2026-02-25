@@ -59,7 +59,7 @@ def buscar_cfo_com_ia():
         # --- BLOCO CORINGA DEFINITIVO (google-genai) ---
         # Não precisa mais de try/except para o modelo, esta biblioteca é mais estável
         response = client.models.generate_content(
-            model="gemini-1.5-flash", 
+            model="models/gemini-1.5-flash", 
             contents=prompt_ia
         )
         analise = response.text.strip()
