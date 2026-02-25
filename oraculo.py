@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import os
 import json
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 # 1. Carregar variáveis de ambiente (Local)
 load_dotenv()
@@ -40,6 +40,12 @@ except Exception as e:
     print(f"❌ Falha crítica no Firebase: {e}")
     exit()
 
+# ... (suas importações e código de inicialização do Firebase continuam iguais)
+
+# Configuração do Novo Cliente Gemini
+# O client deve ser criado usando a API_KEY que você pegou do ambiente
+client = genai.Client(api_key=API_KEY)
+
 def buscar_cfo_com_ia():
     print("🔎 Oráculo analisando o terreno (UEMA)...")
     url = "https://sigconcursos.uema.br/"
@@ -53,22 +59,22 @@ def buscar_cfo_com_ia():
         # Prompt para o Gemini processar
         prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO (Oficiais PM/Bombeiros). Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:4000]}"
         
-        # AQUI ESTÁ A MUDANÇA ESPECÍFICA:
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
-        response = model.generate_content(prompt_ia)
-        if response.text:
-            analise = response.text.strip()
-        else:
-            analise = "O Oráculo não conseguiu interpretar os dados da UEMA agora."
+        # --- BLOCO CORINGA DEFINITIVO (google-genai) ---
+        # Não precisa mais de try/except para o modelo, esta biblioteca é mais estável
+        response = client.models.generate_content(
+            model="gemini-1.5-flash", 
+            contents=prompt_ia
+        )
+        analise = response.text.strip()
+        # -----------------------------------------------
 
-        # Salva no Firestore na coleção de inteligência
+        # Salva no Firestore
         db.collection('inteligencia').document('cfo_status').set({
             'ultima_noticia': analise,
             'status': 'monitorando',
             'data_verificacao': firestore.SERVER_TIMESTAMP
         })
         
-        # Cria um log histórico no 'oraculo_updates' (igual ao seu print)
         db.collection('oraculo_updates').add({
             'conteudo': analise,
             'data': firestore.SERVER_TIMESTAMP,
@@ -80,7 +86,6 @@ def buscar_cfo_com_ia():
     except Exception as e:
         print(f"⚠️ Erro durante a vigília: {e}")
 
-# Execução
 if __name__ == "__main__":
     buscar_cfo_com_ia()
 # No oraculo.py
