@@ -5,16 +5,18 @@ from bs4 import BeautifulSoup
 import os
 import json
 from dotenv import load_dotenv
-from google import genai  # Versão atualizada
+import google.generativeai as genai
 
 # 1. Carregar variáveis de ambiente (Local)
 load_dotenv()
 
 # 2. Configuração do Gemini (Versão 2.0 Flash)
-API_KEY = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=API_KEY) if API_KEY else None
+#client = genai.Client(api_key=API_KEY) if API_KEY else None
 
-if not API_KEY:
+API_KEY = os.getenv("GEMINI_API_KEY")
+if API_KEY:
+    genai.configure(api_key=API_KEY)
+else:
     print("❌ Erro: GEMINI_API_KEY não encontrada.")
     exit()
 
@@ -51,10 +53,9 @@ def buscar_cfo_com_ia():
         # Prompt para o Gemini processar
         prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO (Oficiais PM/Bombeiros). Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:4000]}"
         
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt_ia
-        )
+        # AQUI ESTÁ A MUDANÇA ESPECÍFICA:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt_ia)
         analise = response.text.strip()
 
         # Salva no Firestore na coleção de inteligência
