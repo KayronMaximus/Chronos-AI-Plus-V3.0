@@ -10,7 +10,10 @@ import time
 
 # 1. Configurações Iniciais
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    http_options={'api_version': 'v1'} # Isso força o Google a achar o modelo
+)
 
 # Inicialização do Firebase
 firebase_env = os.getenv("FIREBASE_CREDENTIALS")
@@ -50,8 +53,8 @@ def buscar_cfo_uema():
 
         # Usamos o Gemini para ler o edital (Caminho completo para evitar 404)
         response = client.models.generate_content(
-            model="models/gemini-1.5-flash-8b", 
-            contents=f"Diga se há editais de 2026 para CFO PM/Bombeiros neste texto. Se não, diga 'Sem novidades'. Texto: {texto}"
+            model="gemini-1.5-flash-8b", 
+            contents=f"Diga se há editais de 2026 para CFO PM/Bombeiros neste texto. Texto: {texto}"
         )
         analise = response.text.strip()
         print(f"✅ UEMA: {analise}")
