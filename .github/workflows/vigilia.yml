@@ -27,3 +27,16 @@ jobs:
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
         run: node golem.js
+        
+        # --- PARTE DO ORÁCULO (PYTHON) ---
+      - name: Preparar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Instalar Dependências Python
+        run: pip install firebase-admin requests beautifulsoup4 google-generativeai
+      - name: Executar Oráculo (Monitor de Editais)
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python oraculo.py

@@ -22,29 +22,49 @@ cred = credentials.Certificate(r"C:\Users\Samsung\Projetos\ai-plus-defce-firebas
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-def buscar_cfo():
-    print("🔎 Oráculo buscando atualizações sobre o CFO Maranhão...")
-    # URL de busca focada em editais/notícias de concursos
-    url = "https://www.google.com/search?q=concurso+cfo+bombeiros+maranhao+2026"
+def buscar_cfo_com_ia():
+    print("🧠 Oráculo usando inteligência para analisar editais...")
+    
+    url = "https://sigconcursos.uema.br/" 
     headers = {'User-Agent': 'Mozilla/5.0'}
     
     try:
         r = requests.get(url, headers=headers)
         soup = BeautifulSoup(r.text, 'html.parser')
-        # Pega o primeiro link relevante
-        noticia = soup.find('h3').get_text() if soup.find('h3') else "Nenhuma novidade hoje."
         
-        # Salva na coleção de inteligência
-        db.collection('inteligencia').document('cfo_status').set({
-            'ultima_noticia': noticia,
-            'status': 'monitorando',
-            'alerta': True
-        })
-        print(f"✅ Oráculo atualizado: {noticia}")
-    except Exception as e:
-        print(f"❌ Falha na visão do Oráculo: {e}")
+        # Pegamos todo o texto relevante da página principal de concursos
+        #texto_pagina = soup.get_text()
+        # Em vez de pegar o texto real do site, force um texto de teste:
+        texto_pagina = "URGENTE: Edital CFO PMMA 2026 publicado! Inscrições abertas de 01 a 20 de março."
 
-buscar_cfo()
+        # --- INTEGRAÇÃO COM GEMINI ---
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        Analise o seguinte texto extraído do site de concursos da UEMA:
+        {texto_pagina[:5000]} 
+        
+        Pergunta: Existe alguma informação nova, edital aberto ou mudança de data 
+        especificamente para o CFO (Curso de Formação de Oficiais) da PM ou Bombeiros para 2026?
+        Responda de forma curta e direta para um sistema de alerta.
+        """
+        
+        response = model.generate_content(prompt)
+        analise_ia = response.text.strip()
+
+        # Salva a análise inteligente no Firestore
+        db.collection('inteligencia').document('cfo_status').set({
+            'analise_ia': analise_ia,
+            'status': 'processado_por_ia',
+            'data_verificacao': firestore.SERVER_TIMESTAMP
+        })
+        
+        print(f"🤖 Resumo da IA: {analise_ia}")
+        
+    except Exception as e:
+        print(f"❌ Erro na análise da IA: {e}")
+
+buscar_cfo_com_ia()
 # No oraculo.py
 def gerar_relatorio_financeiro():
     print("📊 Calculando os tesouros do Reino...")
