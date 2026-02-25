@@ -6,6 +6,7 @@ import os
 import json
 from dotenv import load_dotenv
 from google import genai
+import time
 
 # 1. Carregar variáveis de ambiente
 load_dotenv()
@@ -70,7 +71,7 @@ def buscar_cfo_com_ia():
         soup = BeautifulSoup(r.text, 'html.parser')
         texto_pagina = soup.get_text()
 
-        prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO. Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:2000]}"
+        prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO. Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:1500]}"
         
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt_ia)
         analise = response.text.strip()
@@ -104,7 +105,7 @@ def monitorar_flamengo():
         prompt_fla = (
             "Com base no texto, identifique o PRÓXIMO JOGO do Flamengo. "
             "Informe: Adversário, Data, Horário e Campeonato. "
-            f"Texto: {texto_noticias[:3000]}"
+            f"Texto: {texto_noticias[:1500]}"
         )
         
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt_fla)
@@ -131,7 +132,8 @@ def gerar_relatorio_financeiro():
 # --- EXECUÇÃO FINAL ---
 
 if __name__ == "__main__":
-    # Agora tudo roda de forma organizada em um só lugar
     buscar_cfo_com_ia()
+    print("⏳ Aguardando 15s para não estourar a cota...")
+    time.sleep(15) 
     monitorar_flamengo()
     gerar_relatorio_financeiro()
