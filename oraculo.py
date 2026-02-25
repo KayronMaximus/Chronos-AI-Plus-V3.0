@@ -91,8 +91,18 @@ def relatorio_financeiro():
     total = sum(gasto.to_dict().get("valor", 0) for gasto in gastos_ref)
     print(f"💰 Total gasto: R$ {total:.2f}")
 
-# --- EXECUÇÃO ---
+# --- EXECUÇÃO DE DIAGNÓSTICO ---
 if __name__ == "__main__":
-    radar_flamengo()      # Roda primeiro (não gasta cota)
-    buscar_cfo_uema()     # Roda depois (se a cota permitir)
-    relatorio_financeiro()
+    print("📋 LISTANDO MODELOS DISPONÍVEIS PARA SUA CHAVE...")
+    try:
+        # Esse é o comando que vai nos mostrar a lista real
+        for m in client.models.list():
+            print(f"MODELO ENCONTRADO: {m.name}")
+        
+        print("\n--- FIM DA LISTA ---")
+        
+        # Vamos rodar o Flamengo só para garantir que a notificação chega com o ID NOVO
+        radar_flamengo()
+        
+    except Exception as e:
+        print(f"❌ Erro ao listar modelos: {e}")
