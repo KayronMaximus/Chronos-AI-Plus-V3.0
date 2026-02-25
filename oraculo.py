@@ -8,130 +8,88 @@ from dotenv import load_dotenv
 from google import genai
 import time
 
-# 1. Carregar variáveis de ambiente
+# 1. Configurações Iniciais
 load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    print("❌ Erro: GEMINI_API_KEY não encontrada.")
-    exit()
-
-# 2. Configuração do Cliente Gemini
-client = genai.Client(api_key=API_KEY)
-
-# 3. Inicialização do Firebase
+# Inicialização do Firebase
 firebase_env = os.getenv("FIREBASE_CREDENTIALS")
-
 try:
     if firebase_env:
-        print("☁️ Oráculo operando via GitHub Actions...")
-        cred_dict = json.loads(firebase_env)
-        cred = credentials.Certificate(cred_dict)
+        cred = credentials.Certificate(json.loads(firebase_env))
     else:
-        print("💻 Oráculo operando via PC Local...")
-        caminho_local = r"C:\Users\Samsung\Projetos\ai-plus-defce-firebase-adminsdk-fbsvc-b58bfb19c9.json"
-        cred = credentials.Certificate(caminho_local)
-    
+        cred = credentials.Certificate(r"C:\Users\Samsung\Projetos\ai-plus-defce-firebase-adminsdk-fbsvc-b58bfb19c9.json")
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
-    print(f"❌ Falha crítica no Firebase: {e}")
-    exit()
+    print(f"❌ Erro Firebase: {e}"); exit()
 
-# --- FUNÇÕES DE APOIO ---
-
+# --- 2. Função de Notificação (Seu Bot do Telegram) ---
 def enviar_telegram(mensagem):
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat_id: return
     
-    if not token or not chat_id:
-        print("⚠️ Erro: TELEGRAM_TOKEN ou CHAT_ID não configurados.")
-        return
-
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": mensagem, "parse_mode": "Markdown"}
-    
     try:
         requests.post(url, data=payload, timeout=10)
         print("📲 Notificação enviada ao Telegram!")
     except Exception as e:
-        print(f"❌ Erro ao conectar com o Telegram: {e}")
+        print(f"❌ Erro Telegram: {e}")
 
-# --- FUNÇÕES PRINCIPAIS ---
-
-def buscar_cfo_com_ia():
-    print("🔎 Oráculo analisando o terreno (UEMA)...")
+# --- 3. Vigília UEMA (Com IA - Precisa de Análise) ---
+def buscar_cfo_uema():
+    print("🔎 Analisando UEMA com IA...")
     url = "https://sigconcursos.uema.br/"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'}
-    
     try:
-        r = requests.get(url, headers=headers, timeout=15)
+        r = requests.get(url, timeout=15)
         soup = BeautifulSoup(r.text, 'html.parser')
-        texto_pagina = soup.get_text()
+        texto = soup.get_text()[:1000]
 
-        prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO. Texto: {texto_pagina[:1000]}"
-        
-        # MUDANÇA AQUI: Trocamos para o modelo 1.5-flash-8b para economizar cota
-        response = client.models.generate_content(model="gemini-1.5-flash-8b", contents=prompt_ia)
+        # Usamos o Gemini para ler o edital (Caminho completo para evitar 404)
+        response = client.models.generate_content(
+            model="models/gemini-1.5-flash-8b", 
+            contents=f"Diga se há editais de 2026 para CFO PM/Bombeiros neste texto. Se não, diga 'Sem novidades'. Texto: {texto}"
+        )
         analise = response.text.strip()
-
-        db.collection('inteligencia').document('cfo_status').set({
-            'ultima_noticia': analise,
-            'status': 'monitorando',
-            'data_verificacao': firestore.SERVER_TIMESTAMP
-        })
-        
         print(f"✅ UEMA: {analise}")
         
         if "Sem novidades" not in analise:
-             enviar_telegram(f"🔔 *NOVIDADE UEMA:* {analise}")
-
+            enviar_telegram(f"🔔 *ALERTA UEMA:* {analise}")
     except Exception as e:
-        print(f"⚠️ Erro na vigília UEMA: {e}")
+        print(f"⚠️ Erro UEMA (Pode ser cota): {e}")
 
-def monitorar_flamengo():
-    print("⚽ Oráculo de olho no CRF (Flamengo)...")
-    url_fla = "https://ge.globo.com/futebol/times/flamengo/"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0'}
-    
+# --- 4. Radar Flamengo (Sem IA - Rápido e Infalível) ---
+def radar_flamengo():
+    print("⚽ Buscando Flamengo (Modo Direto)...")
+    url = "https://ge.globo.com/futebol/times/flamengo/"
     try:
-        r = requests.get(url_fla, headers=headers, timeout=15)
+        r = requests.get(url, timeout=15)
         soup = BeautifulSoup(r.text, 'html.parser')
-        texto_noticias = soup.get_text()
         
-        prompt_fla = (
-            "Identifique o PRÓXIMO JOGO do Flamengo: Adversário, Data e Horário. "
-            f"Texto: {texto_noticias[:1000]}"
-        )
+        # Pega as 3 manchetes principais do topo
+        manchetes = soup.select('.feed-post-link')[:3]
         
-        # MUDANÇA AQUI: Trocamos para o modelo 1.5-flash-8b para economizar cota
-        response = client.models.generate_content(model="gemini-1.5-flash-8b", contents=prompt_fla)
-        info_jogo = response.text.strip()
+        aviso = "🔴⚫ *ÚLTIMAS DO MENGÃO:*\n\n"
+        for m in manchetes:
+            titulo = m.get_text().strip()
+            link = m.get('href')
+            aviso += f"• {titulo}\n[Ler notícia]({link})\n\n"
         
-        enviar_telegram(f"🔴⚫ *RADAR DO MENGÃO* 🔴⚫\n\n{info_jogo}")
-        print("✅ Flamengo: Informação enviada.")
-
+        enviar_telegram(aviso)
     except Exception as e:
-        print(f"⚠️ Erro na vigília Flamengo: {e}")
+        print(f"⚠️ Erro Flamengo: {e}")
 
-def gerar_relatorio_financeiro():
-    print("📊 Calculando os tesouros do Reino...")
-    try:
-        gastos_ref = db.collection("financas").stream()
-        total = sum(gasto.to_dict().get("valor", 0) for gasto in gastos_ref)
-        print(f"💰 Total gasto: R$ {total:.2f}")
-    except Exception as e:
-        print(f"❌ Erro nas finanças: {e}")
+# --- 5. Finanças ---
+def relatorio_financeiro():
+    gastos_ref = db.collection("financas").stream()
+    total = sum(gasto.to_dict().get("valor", 0) for gasto in gastos_ref)
+    print(f"💰 Total gasto: R$ {total:.2f}")
 
-# --- EXECUÇÃO FINAL ---
-
+# --- EXECUÇÃO ---
 if __name__ == "__main__":
-    buscar_cfo_com_ia()
-    
-    # MUDANÇA AQUI: Aumentamos o tempo para 60 segundos para resetar a cota entre chamadas
-    print("⏳ Aguardando 60s para resetar a cota da API...")
-    time.sleep(60) 
-    
-    monitorar_flamengo()
-    gerar_relatorio_financeiro()
+    radar_flamengo()      # Roda primeiro (não gasta cota)
+    buscar_cfo_uema()     # Roda depois (se a cota permitir)
+    relatorio_financeiro()
