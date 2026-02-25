@@ -66,24 +66,32 @@ def buscar_cfo_uema():
 
 # --- 4. Radar Flamengo (Sem IA - Rápido e Infalível) ---
 def radar_flamengo():
-    print("⚽ Buscando Flamengo (Modo Direto)...")
+    print("⚽ Buscando Flamengo (Modo Pro)...")
     url = "https://ge.globo.com/futebol/times/flamengo/"
     try:
         r = requests.get(url, timeout=15)
         soup = BeautifulSoup(r.text, 'html.parser')
         
-        # Pega as 3 manchetes principais do topo
+        # 1. Pega manchetes
         manchetes = soup.select('.feed-post-link')[:3]
         
-        aviso = "🔴⚫ *ÚLTIMAS DO MENGÃO:*\n\n"
+        # 2. Tenta pegar informações de próximo jogo (se disponível no topo)
+        proximo_jogo = soup.select_one('.lista-jogos__jogo')
+        info_jogo = ""
+        if proximo_jogo:
+            info_jogo = "📅 *PRÓXIMO CONFRONTO:* " + proximo_jogo.get_text(separator=" ").strip() + "\n\n"
+
+        aviso = f"🔴⚫ *RADAR DO MENGÃO* 🔴⚫\n\n{info_jogo}🗞️ *DESTAQUES:*\n"
+        
         for m in manchetes:
             titulo = m.get_text().strip()
             link = m.get('href')
-            aviso += f"• {titulo}\n[Ler notícia]({link})\n\n"
+            aviso += f"• {titulo}\n[Ler mais]({link})\n\n"
         
         enviar_telegram(aviso)
+        
     except Exception as e:
-        print(f"⚠️ Erro Flamengo: {e}")
+        print(f"⚠️ Erro no Radar Flamengo: {e}")
 
 # --- 5. Finanças ---
 def relatorio_financeiro():

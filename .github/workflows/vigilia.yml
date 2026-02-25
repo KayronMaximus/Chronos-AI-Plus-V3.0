@@ -4,7 +4,8 @@ on:
   schedule:
     # 11:00 UTC = 08:00 Brasília (Foco: Exercícios)
     # 00:00 UTC = 21:00 Brasília (Foco: Finanças)
-    - cron: '0 11,0 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 21 * * *'
   workflow_dispatch: # Botão para rodar manualmente
 
 jobs:
