@@ -54,9 +54,12 @@ def buscar_cfo_com_ia():
         prompt_ia = f"Analise este texto da UEMA e diga se há editais abertos ou notícias de 2026 para o CFO (Oficiais PM/Bombeiros). Se não houver, diga apenas 'Sem novidades oficiais'. Texto: {texto_pagina[:4000]}"
         
         # AQUI ESTÁ A MUDANÇA ESPECÍFICA:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         response = model.generate_content(prompt_ia)
-        analise = response.text.strip()
+        if response.text:
+            analise = response.text.strip()
+        else:
+            analise = "O Oráculo não conseguiu interpretar os dados da UEMA agora."
 
         # Salva no Firestore na coleção de inteligência
         db.collection('inteligencia').document('cfo_status').set({
