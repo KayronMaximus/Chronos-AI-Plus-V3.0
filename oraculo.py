@@ -44,16 +44,16 @@ def enviar_telegram(mensagem):
 
 # --- 3. Vigília UEMA (Com IA - Precisa de Análise) ---
 def buscar_cfo_uema():
-    print("🔎 Analisando UEMA com IA...")
+    print("🔎 Analisando UEMA com IA (Modelo Lite)...")
     url = "https://sigconcursos.uema.br/"
     try:
         r = requests.get(url, timeout=15)
         soup = BeautifulSoup(r.text, 'html.parser')
         texto = soup.get_text()[:1000]
 
-        # Usamos o Gemini para ler o edital (Caminho completo para evitar 404)
+        # MUDANÇA AQUI: Usando o nome exato que apareceu no seu log
         response = client.models.generate_content(
-            model="gemini-1.5-flash-8b", 
+            model="gemini-2.0-flash-lite", 
             contents=f"Diga se há editais de 2026 para CFO PM/Bombeiros neste texto. Texto: {texto}"
         )
         analise = response.text.strip()
@@ -62,7 +62,7 @@ def buscar_cfo_uema():
         if "Sem novidades" not in analise:
             enviar_telegram(f"🔔 *ALERTA UEMA:* {analise}")
     except Exception as e:
-        print(f"⚠️ Erro UEMA (Pode ser cota): {e}")
+        print(f"⚠️ Erro UEMA: {e}")
 
 # --- 4. Radar Flamengo (Sem IA - Rápido e Infalível) ---
 def radar_flamengo():
@@ -93,16 +93,8 @@ def relatorio_financeiro():
 
 # --- EXECUÇÃO DE DIAGNÓSTICO ---
 if __name__ == "__main__":
-    print("📋 LISTANDO MODELOS DISPONÍVEIS PARA SUA CHAVE...")
-    try:
-        # Esse é o comando que vai nos mostrar a lista real
-        for m in client.models.list():
-            print(f"MODELO ENCONTRADO: {m.name}")
-        
-        print("\n--- FIM DA LISTA ---")
-        
-        # Vamos rodar o Flamengo só para garantir que a notificação chega com o ID NOVO
-        radar_flamengo()
-        
-    except Exception as e:
-        print(f"❌ Erro ao listar modelos: {e}")
+    radar_flamengo()      # Notificação do Mengão
+    print("⏳ Pausa de 10s...")
+    time.sleep(10)
+    buscar_cfo_uema()     # Notificação da UEMA com o modelo Lite
+    relatorio_financeiro() # Relatório financeiro (sem IA)
